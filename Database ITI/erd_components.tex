@@ -1,0 +1,313 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage{geometry}
+\geometry{margin=0.5in}
+\usepackage{fontspec} % Compile with XeLaTeX or LuaLaTeX
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows, positioning, fit, calc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{caption}
+
+% ---------------- Page layout rules ----------------
+% Each section starts on a new page (\clearpage before every \section below; the
+% short Introduction stays on the title page). Each subsection -- heading, text,
+% and its diagrams -- is one unbreakable block: if it does not fit in the space
+% left on the page, the whole block moves to the next page.
+\newenvironment{keepblock}
+  {\par\noindent\begin{minipage}{\linewidth}\setlength{\parskip}{0.4em}}
+  {\end{minipage}\par\bigskip}
+
+\title{\textbf{Database ERD and EERD Visual Components Reference}}
+\author{Ahmed Yassin}
+\date{\today}
+
+% ERD/EERD styles and the shared diagrams live in erdstyles.sty (same folder)
+\usepackage{erdstyles}
+
+\begin{document}
+
+\maketitle
+
+\begin{keepblock}
+    \section{Introduction}
+    The ERD and EERD symbols from the ITI Database course, in Chen notation (Elmasri \& Navathe's version). The TikZ source for every figure is in \texttt{erd\_components.tex} and \texttt{erdstyles.sty}.
+\end{keepblock}
+
+\begin{keepblock}
+    \section{Core ERD Components}
+
+    \subsection{Entity Types}
+    An entity type is a person, place, object, or concept the organization needs to store data about.
+
+    \begin{center}
+        \centering
+        \begin{minipage}{0.45\textwidth}
+            \centering
+            \begin{tikzpicture}
+                \node[entity] (e) {Employee};
+            \end{tikzpicture}
+            \captionof*{figure}{Strong Entity (Independent)}
+        \end{minipage}
+        \hfill
+        \begin{minipage}{0.45\textwidth}
+            \centering
+            \begin{tikzpicture}
+                \node[weak entity] (we) {Dependent};
+            \end{tikzpicture}
+            \captionof*{figure}{Weak Entity (Dependent)}
+        \end{minipage}
+    \end{center}
+\end{keepblock}
+
+\begin{keepblock}
+    \subsection{Attribute Types}
+    Attributes are properties of entities or relationships.
+
+    \begin{center}
+        \centering
+        \begin{tikzpicture}[node distance=1.6cm and 2.2cm]
+            \node[attribute] (simple) {Age};
+            \node[key attribute] (key) [right=of simple] {\underline{SSN}};
+            \node[partial key attribute] (pkey) [right=of key] {\partialkey{DepName}};
+            \node[derived attribute] (derived) [below=of simple] {NetSalary};
+            \node[multivalued attribute] (multi) [below=of key] {Phones};
+
+            \node[below=0.3cm of simple]  {\small Simple Attribute};
+            \node[below=0.3cm of key]     {\small Key Attribute};
+            \node[below=0.3cm of pkey]    {\small Partial Key (weak entity)};
+            \node[below=0.3cm of derived] {\small Derived Attribute};
+            \node[below=0.3cm of multi]   {\small Multivalued Attribute};
+        \end{tikzpicture}
+    \end{center}
+\end{keepblock}
+
+\begin{keepblock}
+    \subsection{Advanced Attributes}
+    \begin{center}
+        \centering
+        \begin{minipage}{0.48\textwidth}
+            \centering
+            \begin{tikzpicture}[node distance=1cm and 0.8cm]
+                \node[attribute] (comp) {Name};
+                \node[attribute] (fname) [below left=of comp] {Fname};
+                \node[attribute] (lname) [below right=of comp] {Lname};
+                \path[link] (comp) edge (fname) edge (lname);
+            \end{tikzpicture}
+            \captionof*{figure}{Composite Attribute}
+        \end{minipage}
+        \hfill
+        \begin{minipage}{0.48\textwidth}
+            \centering
+            \begin{tikzpicture}[node distance=1cm and 0.8cm]
+                \node[multivalued attribute] (comp_multi) {Addresses};
+                \node[attribute] (city) [below left=of comp_multi] {City};
+                \node[attribute] (street) [below right=of comp_multi] {Street};
+                \path[link] (comp_multi) edge (city) edge (street);
+            \end{tikzpicture}
+            \captionof*{figure}{Complex Attribute (Multivalued + Composite)}
+        \end{minipage}
+    \end{center}
+\end{keepblock}
+
+\begin{keepblock}
+    \subsection{Relationships and Participation Constraints}
+    Relationships represent associations between entities. The cardinality ratio (1:1, 1:M, M:N) is written on the lines. Participation states whether every instance must take part: a \textbf{single line} means partial (optional) participation, a \textbf{double line} means total (mandatory) participation.
+
+    \begin{center}
+        \centering
+        \begin{tikzpicture}[node distance=2.2cm]
+            \node[entity] (emp) {Employee};
+            \node[relationship] (man) [right=of emp] {Manages};
+            \node[entity] (dept) [right=of man] {Department};
+            \node[attribute] (hd) [above=0.6cm of man] {Hire\_Date};
+
+            \path[link]       (emp) -- node[card, above] {$1$} (man);
+            \path[total link] (man) -- node[card, above] {$1$} (dept);
+            \path[link] (man) -- (hd);
+        \end{tikzpicture}
+        \captionof*{figure}{Binary One-to-One (1:1) relationship with an attribute. Single line: participation of Employee is partial (not every employee is a manager). Double line: participation of Department is total (every department must have a manager).}
+    \end{center}
+
+    \begin{center}
+        \centering
+        \begin{tikzpicture}[node distance=2.2cm]
+            \node[entity] (emp) {Employee};
+            \node[relationship] (wo) [right=of emp] {Works\_On};
+            \node[entity] (proj) [right=of wo] {Project};
+            \node[attribute] (hrs) [above=0.6cm of wo] {Hours};
+
+            \path[total link] (emp) -- node[card, above] {$M$} (wo);
+            \path[total link] (wo)  -- node[card, above] {$N$} (proj);
+            \path[link] (wo) -- (hrs);
+        \end{tikzpicture}
+        \captionof*{figure}{Binary Many-to-Many (M:N) relationship with total participation on both sides.}
+    \end{center}
+
+    \begin{center}
+        \centering
+        \begin{tikzpicture}[node distance=2.2cm]
+            \node[entity] (emp) {Employee};
+            \node[identifying relationship] (has) [right=of emp] {Has};
+            \node[weak entity] (dep) [right=of has] {Dependent};
+
+            \path[link]       (emp) -- node[card, above] {$1$} (has);
+            \path[total link] (has) -- node[card, above] {$M$} (dep);
+        \end{tikzpicture}
+        \captionof*{figure}{Identifying Relationship (double diamond) connecting the owner (strong) entity to a weak entity. The weak entity always has total participation.}
+    \end{center}
+\end{keepblock}
+
+\begin{keepblock}
+    \subsection{Unary (Recursive) Relationships}
+    Unary relationships occur between instances of the same entity type. Role names distinguish the two ends.
+
+    \begin{center}
+        \centering
+        \begin{tikzpicture}
+            \node[entity] (emp) {Employee};
+            \node[relationship] (super) [above=1.6cm of emp] {Supervises};
+
+            \path[link] (emp.north west) -- node[role, left] {supervisor \ $1$} (super.west);
+            \path[link] (emp.north east) -- node[role, right] {supervisee \ $M$} (super.east);
+        \end{tikzpicture}
+        \captionof*{figure}{Unary 1:M Relationship (Supervision)}
+    \end{center}
+\end{keepblock}
+
+\begin{keepblock}
+    \subsection{Ternary Relationships}
+    Ternary relationships connect three distinct entity types.
+
+    \begin{center}
+        \centering
+        \begin{tikzpicture}[node distance=2.5cm]
+            \node[relationship] (treat) {Prescribes};
+            \node[entity] (doc) [above left=of treat] {Doctor};
+            \node[entity] (pat) [above right=of treat] {Patient};
+            \node[entity] (med) [below=1.6cm of treat] {Medicine};
+            \node[attribute] (date) [right=1.2cm of treat] {Date};
+
+            \path[link] (doc) -- node[card, left, pos=0.6] {$M$} (treat);
+            \path[link] (pat) -- node[card, right, pos=0.6] {$N$} (treat);
+            \path[link] (med) -- node[card, left] {$P$} (treat);
+            \path[link] (treat) -- (date);
+        \end{tikzpicture}
+        \captionof*{figure}{Ternary M:N:P Relationship with a relationship attribute (Date).}
+    \end{center}
+\end{keepblock}
+
+\clearpage
+\begin{keepblock}
+    \section{Enhanced ERD (EERD) Components}
+    EERD models supertypes, subtypes, and specialization/generalization hierarchies. The line from the supertype to the circle shows \emph{completeness} (double = total, single = partial). The letter in the circle shows \emph{disjointness} (d = disjoint, o = overlapping). The U-shaped subset symbol on each subtype line opens toward the circle and means ``subtype $\subset$ supertype''.
+
+    \subsection{Specialization Hierarchy with Completeness and Disjoint Constraints}
+    \begin{center}
+        \centering
+        \begin{tikzpicture}
+            \node[entity] (super) at (0,0) {Vehicle};
+            \node[spec circle] (c) at (0,-1.8) {d};
+            \node[entity] (sub1) at (-2.8,-3.8) {Car};
+            \node[entity] (sub2) at (2.8,-3.8) {Truck};
+
+            \path[total link] (super) -- (c);
+            \draw[thick] (c) -- (sub1);
+            \draw[thick] (c) -- (sub2);
+            \subsetmark{c}{sub1}
+            \subsetmark{c}{sub2}
+        \end{tikzpicture}
+        \captionof*{figure}{Total Disjoint Specialization: Double line to circle = Total Specialization (every Vehicle must be either a Car or a Truck). `d' in circle = Disjoint (a Vehicle cannot be both a Car and a Truck).}
+    \end{center}
+
+    \begin{center}
+        \centering
+        \begin{tikzpicture}
+            \node[entity] (super) at (0,0) {Person};
+            \node[spec circle] (c) at (0,-1.8) {o};
+            \node[entity] (sub1) at (-2.8,-3.8) {Student};
+            \node[entity] (sub2) at (2.8,-3.8) {Employee};
+
+            \path[partial link] (super) -- (c);
+            \draw[thick] (c) -- (sub1);
+            \draw[thick] (c) -- (sub2);
+            \subsetmark{c}{sub1}
+            \subsetmark{c}{sub2}
+        \end{tikzpicture}
+        \captionof*{figure}{Partial Overlapping Specialization: Single line to circle = Partial Specialization (a Person can exist without being a Student or an Employee). `o' in circle = Overlap (a Person can be both a Student and an Employee simultaneously).}
+    \end{center}
+\end{keepblock}
+
+\clearpage
+\begin{keepblock}
+    \section{Complete Case Studies}
+
+    \subsection{Company Case Study ERD}
+    From the description on page 4 of the lecture notes:
+    \begin{itemize}
+        \item Employees: SSN (key), Bdate, Gender, Salary, Name (Fname, Lname).
+        \item Departments: DNUM (key), Dname (key, unique), Locations (multivalued).
+        \item Projects: PNumber (key), Pname (key, unique), Plocation.
+        \item Dependents (weak entity): DepName (partial key), Gender, Bdate.
+    \end{itemize}
+
+    \begin{center}
+        \centering
+        \small
+        \begin{tabularx}{\textwidth}{l l X}
+            \toprule
+            \textbf{Relationship} & \textbf{Cardinality}      & \textbf{Participation}                                            \\
+            \midrule
+            Works\_For            & Employee M : 1 Department & Both total                                                        \\
+            Manages               & Employee 1 : 1 Department & Employee partial, Department total; attribute \texttt{Hire\_Date} \\
+            Controls              & Department 1 : M Project  & Department partial, Project total                                 \\
+            Works\_On             & Employee M : N Project    & Both total; attribute \texttt{Hours}                              \\
+            Has                   & Employee 1 : M Dependent  & Employee partial, Dependent total (identifying)                   \\
+            Supervises            & Employee 1 : M Employee   & Partial on both roles (recursive)                                 \\
+            \bottomrule
+        \end{tabularx}
+    \end{center}
+
+    \begin{center}
+        \centering
+        \resizebox{\textwidth}{!}{\CompanyERD}
+        \vspace{0.3cm}
+        \captionof*{figure}{Company Database Entity-Relationship Diagram}
+    \end{center}
+\end{keepblock}
+
+\begin{keepblock}
+    \subsection{Vehicle Specialization Case Study EERD}
+    From page 5/11 of the lecture notes:
+    \begin{itemize}
+        \item Supertype: Vehicle with attributes Vehicle-ID (key), Vehicle-Name, Price.
+        \item Specialization circle with disjoint (d) and total specialization (double line).
+        \item Subtypes:
+              \begin{itemize}
+                  \item Car with attributes Make, Model.
+                  \item Truck with attributes Glass-Type, Cab-Type, Capacity.
+              \end{itemize}
+    \end{itemize}
+
+    \begin{center}
+        \centering
+        \resizebox{0.8\textwidth}{!}{\VehicleEERD}
+        \vspace{0.3cm}
+        \captionof*{figure}{Vehicle Specialization Enhanced Entity-Relationship Diagram}
+    \end{center}
+\end{keepblock}
+
+\clearpage
+\begin{keepblock}
+    \section{Relational Schema Diagram}
+    After mapping, the Company ERD becomes the following tables. Primary keys are underlined, and each arrow runs from a foreign key to the primary key it references. Note the arrow from \texttt{Super\_SSN} back into its own table (the recursive Supervises relationship) and the pair of arrows between \texttt{Employee} and \texttt{Department}, which form a circular reference.
+
+    \begin{center}
+        \centering
+        \resizebox{\textwidth}{!}{\CompanySchema}
+        \captionof*{figure}{Relational schema of the Company database}
+    \end{center}
+\end{keepblock}
+
+\end{document}

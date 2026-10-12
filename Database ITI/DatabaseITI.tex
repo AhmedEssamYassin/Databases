@@ -1,0 +1,1797 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{geometry}
+\geometry{margin=0.5in}
+\usepackage{amsmath,amssymb}
+\usepackage{fontspec}
+% Fonts: use the preferred fonts when installed, otherwise fall back silently
+% (Segoe UI / Consolas ship with Windows only; Montserrat must be installed).
+\IfFontExistsTF{Segoe UI}{\setmainfont{Segoe UI}}{}
+\IfFontExistsTF{Montserrat}{\setsansfont{Montserrat}[Scale=MatchLowercase]}{}
+\IfFontExistsTF{Consolas}{\setmonofont{Consolas}[Scale=MatchLowercase]}{}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows, positioning, fit, calc}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{tcolorbox}
+\usepackage{caption}
+\usepackage{setspace}
+\usepackage{enumitem}
+\setlist{itemsep=2pt, parsep=0pt, topsep=4pt, before=\setstretch{1.15}}
+\setstretch{1.2}
+\setlength{\emergencystretch}{2em} % lets long \texttt{} runs wrap instead of overflowing
+
+% ---------------- Keep related content on one page ----------------
+% Lists (outermost level only) and code listings are placed in an unbreakable box,
+% glued to the paragraph that introduces them. If a block does not fit in the space
+% left on the page, it moves to the next page as a whole instead of being split.
+\usepackage{etoolbox}
+\usepackage{float}          % [H] = place tables/figures exactly here, never float away
+\makeatletter
+\newcommand{\keepstart}{\par\nopagebreak\vspace{0.5\baselineskip}\noindent\begin{minipage}{\linewidth}}
+\newcommand{\keepend}{\end{minipage}\par\vspace{0.5\baselineskip}}
+\newcommand{\keeplists}[1]{%
+  \BeforeBeginEnvironment{#1}{\ifnum\@listdepth=0 \keepstart\fi}%
+  \AfterEndEnvironment{#1}{\ifnum\@listdepth=0 \keepend\fi}}
+\keeplists{itemize}
+\keeplists{enumerate}
+\keeplists{description}
+\BeforeBeginEnvironment{lstlisting}{\keepstart}
+\AfterEndEnvironment{lstlisting}{\keepend}
+\makeatother
+% Do not leave a single line of a paragraph alone at the top or bottom of a page
+\widowpenalty=10000
+\clubpenalty=10000
+
+% --- Custom Color Palette ---
+\definecolor{primaryblue}{RGB}{0, 51, 102}      % Deep professional navy for sections
+\definecolor{secondaryteal}{RGB}{0, 102, 102}   % Teal for subsections
+\definecolor{accentgray}{RGB}{90, 100, 110}     % Slate gray for subsubsections/headers
+\definecolor{codebackground}{RGB}{248, 249, 250} % Light gray-blue for code background
+\definecolor{codeleftborder}{RGB}{0, 102, 204}  % Solid blue for code block accent
+
+% Callout boxes
+\definecolor{boxbluebg}{RGB}{240, 245, 255}
+\definecolor{boxblueframe}{RGB}{100, 150, 220}
+\definecolor{boxgreenbg}{RGB}{240, 252, 240}
+\definecolor{boxgreenframe}{RGB}{120, 200, 120}
+\definecolor{boxredbg}{RGB}{255, 240, 240}
+\definecolor{boxredframe}{RGB}{230, 120, 120}
+
+% --- Structural Translation (Chapters -> Sections) ---
+\let\oldsubsection\subsection
+\let\oldsection\section
+\let\oldpart\part
+
+\makeatletter
+% 1. Redefine \subsection to map to \subsubsection
+\renewcommand{\subsection}{\@ifstar{\@gsubsubsection}{\@subsubsection}}
+\newcommand{\@gsubsubsection}[1]{\subsubsection*{#1}}
+\newcommand{\@subsubsection}[2][]{\subsubsection{#2}}
+
+% 2. Redefine \section to map to \subsection
+\renewcommand{\section}{\@ifstar{\@gsubsection}{\@subsectionnew}}
+\newcommand{\@gsubsection}[1]{\oldsubsection*{#1}}
+\newcommand{\@subsectionnew}[2][]{\oldsubsection{#2}}
+
+% 3. Define \chapter to map to \section (since article doesn't have \chapter)
+\newcommand{\chapter}{\@ifstar{\@gsection}{\@sectionnew}}
+\newcommand{\@gsection}[1]{\oldsection*{#1}}
+\newcommand{\@sectionnew}[2][]{\oldsection{#2}}
+\makeatother
+
+% --- Page Break for Every Section ---
+\newcommand{\sectionbreak}{\clearpage}
+% Every part starts on a new page. titlesec redefines \part, so the page break is
+% added at \begin{document}, after all packages have finished defining it.
+\AtBeginDocument{\let\titledpart\part \renewcommand{\part}{\clearpage\titledpart}}
+
+% --- titlesec heading formatting ---
+\titleformat{\section}
+  {\sffamily\Large\bfseries\color{primaryblue}}{\thesection}{1em}{}
+\titleformat{\subsection}
+  {\sffamily\large\bfseries\color{secondaryteal}}{\thesubsection}{1em}{}
+\titleformat{\part}[display]
+  {\centering\sffamily\bfseries\color{primaryblue}}
+  {\Large\MakeUppercase{\partname}~\thepart}{0.8em}
+  {\Huge}[{\vspace{0.6em}\color{secondaryteal}\titlerule[1.5pt]}]
+\titlespacing*{\part}{0pt}{-19pt}{3ex}  
+\titleformat{\subsubsection}
+  {\sffamily\normalsize\bfseries\color{accentgray}}{\thesubsubsection}{1em}{}
+
+% --- fancyhdr running footer configuration ---
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyfoot[C]{\color{accentgray}\sffamily\thepage}
+
+% --- listings package configuration (modern IDE styling) ---
+\lstset{
+    language=SQL,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{primaryblue}\bfseries,
+    commentstyle=\color{green!50!black}\itshape,
+    stringstyle=\color{purple},
+    backgroundcolor=\color{codebackground},
+    frame=leftline,
+    framerule=3pt,
+    rulecolor=\color{codeleftborder},
+    framesep=6pt,
+    breaklines=true,
+    showstringspaces=false,
+    morekeywords={DECLARE,DENSE_RANK,NTILE,PARTITION,MERGE,MATCHED,OUTPUT,INSTEAD,BACKUP,DATABASE,DISK,SNAPSHOT,CLR,RECONFIGURE,sp_configure,BULK,INSERT,
+      GO,USE,EXEC,PRINT,TRY,CATCH,THROW,IIF,PIVOT,UNPIVOT,OVER,ROWS,RANGE,UNBOUNDED,PRECEDING,FOLLOWING,TOP,TIES,OFFSET,FETCH,NEXT,
+      ROLLUP,CUBE,GROUPING,SETS,EXCEPT,INTERSECT,APPLY,IDENTITY,IDENTITY_INSERT,SCHEMABINDING,ENCRYPTION,PERSISTED,SYNONYM,SCHEMA,
+      TRIGGER,AFTER,PROCEDURE,FUNCTION,RETURNS,RETURN,VIEW,INDEX,CLUSTERED,NONCLUSTERED,INCLUDE,CURSOR,OPEN,CLOSE,DEALLOCATE,
+      RULE,TYPE,TRUNCATE,CASCADE,NVARCHAR,DATETIME,DATETIME2,BIT,TINYINT,SMALLINT,BIGINT,FLOAT,MONEY,TRANSACTION,TRAN,COMMIT,
+      ROLLBACK,SAVE,MAX,NOCOUNT,XACT_ABORT,RECOVERY,SIMPLE,FULL,BULK_LOGGED,DIFFERENTIAL,LOG,EXISTS,IF,ELSE,WHILE,BEGIN,END}
+}
+
+% --- Custom Meaningful Callout Box Environments ---
+\newtcolorbox{keyconcept}[1][Key Concept]{
+  colback=boxbluebg,
+  colframe=boxblueframe,
+  fonttitle=\bfseries\color{primaryblue},
+  title=#1,
+  arc=3pt,
+  boxrule=1.5pt,
+  left=10pt,
+  right=10pt,
+  top=6pt,
+  bottom=6pt
+}
+
+\newtcolorbox{bestpractice}[1][Best Practice]{
+  colback=boxgreenbg,
+  colframe=boxgreenframe,
+  fonttitle=\bfseries\color{green!40!black},
+  title=#1,
+  arc=3pt,
+  boxrule=1.5pt,
+  left=10pt,
+  right=10pt,
+  top=6pt,
+  bottom=6pt
+}
+
+\newtcolorbox{warningbox}[1][Warning / Common Error]{
+  colback=boxredbg,
+  colframe=boxredframe,
+  fonttitle=\bfseries\color{red!50!black},
+  title=#1,
+  arc=3pt,
+  boxrule=1.5pt,
+  left=10pt,
+  right=10pt,
+  top=6pt,
+  bottom=6pt
+}
+
+% ERD/EERD styles and the shared diagrams live in erdstyles.sty (same folder)
+\usepackage{erdstyles}
+
+% Relational-schema helpers: \pk{} = primary key (underlined), \fk{} = foreign key
+\newcommand{\pk}[1]{\underline{#1}}
+\newcommand{\fk}[1]{\textit{#1}\textsuperscript{\tiny FK}}
+\newcommand{\rel}[2]{\textbf{#1}(#2)}
+
+% hyperref is loaded last so that it can patch the other packages correctly
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    filecolor=black,
+    urlcolor=black,
+    pdftitle={Database Systems Reference Guide},
+    pdfauthor={Ahmed Yassin},
+    pdfpagemode=UseOutlines,
+    bookmarksnumbered=true,
+}
+% Parts are bookmark level 0 so the remapped \chapter (level 1) nests without a gap
+\makeatletter\def\toclevel@part{0}\makeatother
+
+\title{\Huge \textbf{Database Systems Reference Guide}}
+\author{\textbf{Ahmed Yassin}}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\part{Introduction to Database Systems}
+
+\chapter{Core Concepts \& Architectures}
+
+\section{What is a Database?}
+A \textbf{Database (DB)} is a structured collection of logically related data designed to meet the information needs of an organization. In a relational database, data is represented in tabular structures consisting of rows (tuples) and columns (attributes).
+
+\section{Database vs. DBMS vs. DBS}
+These three terms are often confused:
+\begin{description}
+    \item[Database (DB):] The actual collection of tables, indexes, and stored records (analogous to a library book).
+    \item[Database Management System (DBMS):] The software suite used to create, maintain, query, secure, and administer databases, such as Microsoft SQL Server, PostgreSQL, MySQL, or Oracle (analogous to a librarian).
+    \item[Database System (DBS):] The complete system that encompasses the DB, the DBMS, the physical hardware, operating systems, networking infrastructure, and the end users/applications (analogous to the entire library system).
+\end{description}
+
+\section{Data vs. Metadata}
+\begin{description}
+    \item[Data:] The raw facts or actual content stored within the database fields (e.g., \texttt{"Ahmed", 20, "Cairo"}).
+    \item[Metadata:] ``Data about data'' that defines the structure, schema, constraints, data types, and relationships of the actual data (e.g., specifying that \texttt{Name} is a \texttt{VARCHAR(50)} and \texttt{Age} is an \texttt{INT}).
+\end{description}
+
+\section{Problems in File-Based Systems (FBS)}
+Before DBMSs, each application kept its data in its own separate files. This caused the following problems:
+\begin{enumerate}
+    \item \textbf{Data Redundancy:} The same information is stored multiple times in different files, wasting storage space.
+    \item \textbf{Data Inconsistency:} Updates to data in one file might not propagate to other files, leading to conflicting records.
+    \item \textbf{Lack of Data Integrity:} No automated check constraints or validation rules to ensure data correctness.
+    \item \textbf{Limited Data Sharing:} Files are siloed, making multi-user access and sharing difficult.
+    \item \textbf{Poor Security:} Lack of fine-grained access control or role-based user authentication.
+    \item \textbf{Difficult Data Retrieval:} Fetching records requires writing custom processing scripts rather than using a standardized declarative language (like SQL).
+    \item \textbf{No Transaction Support:} Lack of ACID properties, exposing data to corruption during system failures.
+    \item \textbf{Program--Data Dependence:} The file structure is defined inside each program, so changing a file's format means changing every program that uses it.
+\end{enumerate}
+
+\section{Types of Databases}
+Databases are categorized by their data models and deployment targets:
+\begin{table}[H]
+    \centering
+    \begin{tabularx}{\textwidth}{l X X}
+        \toprule
+        \textbf{Database Type} & \textbf{Description}                             & \textbf{Examples}                \\
+        \midrule
+        Relational (RDBMS)     & Organized as tables with keys                    & SQL Server, PostgreSQL, MySQL    \\
+        NoSQL                  & Flexible formats (documents, key-value, graphs)  & MongoDB, Redis, Neo4j, Cassandra \\
+        Distributed            & Data partitioned across multiple nodes           & Google Spanner, CockroachDB      \\
+        Object-Oriented        & Stores data directly as OOP objects              & ObjectDB, db4o                   \\
+        Time-Series            & Optimized for time-stamped log data              & InfluxDB, TimescaleDB            \\
+        Cloud                  & Managed cloud-platform deployments               & Amazon RDS, Google Firestore     \\
+        Embedded               & Serverless databases running within applications & SQLite, Berkeley DB              \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Taxonomy of Database Systems}
+\end{table}
+
+\section{Database Life Cycle (DBLC)}
+The development of a database follows a structured lifecycle:
+\begin{enumerate}
+    \item \textbf{Analysis:} System analysts define user requirements, business rules, and scope.
+    \item \textbf{Database Design (ERD):} Database designers build the conceptual schema using Entity-Relationship Diagrams.
+    \item \textbf{Database Mapping:} Converting the ERD into logical relational tables with primary and foreign keys.
+    \item \textbf{Normalization:} Refining the mapped relations to eliminate redundancy and anomalies (applying 1NF, 2NF, 3NF, BCNF). Normalization operates on relations (tables), so it follows mapping.
+    \item \textbf{Implementation:} Implementing the relational schema in RDBMS (SQL Server, MySQL).
+    \item \textbf{Database Administration:} Managing security, backup, performance tuning, and user access.
+    \item \textbf{Data Science \& Analytics:} Extracting, analyzing, and visualizing data for decision-making.
+\end{enumerate}
+
+\part{Database Design: ERD \& EERD}
+
+\chapter{The Entity-Relationship Diagram (ERD)}
+
+\section{Introduction}
+An \textbf{Entity-Relationship Diagram (ERD)} is a visual conceptual representation of a database schema. It identifies the entities, attributes, and relationships required by a business system using Chen's standard notation.
+
+\section{Entities: Strong vs. Weak}
+\begin{description}
+    \item[Strong (Independent) Entity:] An entity that exists independently of other entities in the system. It possesses a primary key that uniquely identifies each of its records (e.g., \texttt{Doctor} with identifier \texttt{DoctorID}). Represented as a \textbf{single rectangle}.
+    \item[Weak Entity:] An entity that cannot exist without a related parent (strong) entity. It does not have a primary key of its own; instead, it has a \textbf{partial key} (or discriminator) that distinguishes records only within the scope of a parent record. Its full unique identification requires combining the parent's primary key with its own partial key. Weak entities always have total participation in their identifying relationship. Represented as a \textbf{double rectangle}, its identifying relationship as a \textbf{double diamond}, and its partial key with a \textbf{dashed underline} (e.g., \partialkey{DepName}).
+\end{description}
+
+\section{Types of Attributes}
+Attributes describe the properties of entities or relationships:
+\begin{enumerate}
+    \item \textbf{Simple (Atomic):} Cannot be subdivided further (e.g., \texttt{FirstName}, \texttt{Salary}).
+    \item \textbf{Composite:} Can be split into smaller sub-components (e.g., \texttt{Name} $\rightarrow$ \texttt{Fname, Lname}).
+    \item \textbf{Derived:} Not stored; calculated from other stored attributes when needed (e.g., \texttt{Age} calculated from \texttt{Birthdate}). Represented as a \textbf{dashed oval}.
+    \item \textbf{Multivalued:} Can hold multiple values for a single entity instance (e.g., an employee having multiple \texttt{PhoneNumbers}). Represented as a \textbf{double oval}.
+    \item \textbf{Key Attribute:} Uniquely identifies an entity instance. Represented as an oval with its name \textbf{underlined}. An entity may have more than one key (e.g., both \texttt{DNUM} and \texttt{Dname} are unique); each one is underlined.
+    \item \textbf{Partial Key:} The discriminator of a weak entity. Represented with a \textbf{dashed underline}.
+    \item \textbf{Complex:} A nested combination of composite and multivalued attributes (e.g., \texttt{Addresses} being multivalued, where each address is composite: \texttt{Street, City, Country}).
+\end{enumerate}
+
+\section{Degree of Relationships}
+The degree of a relationship refers to the number of participating entities:
+\begin{description}
+    \item[Unary (Degree 1):] A relationship between an entity and itself (e.g., an \texttt{Employee} manages other \texttt{Employees}).
+    \item[Binary (Degree 2):] A relationship between two entity types (e.g., \texttt{Doctor} treats \texttt{Patient}).
+    \item[Ternary (Degree 3):] A relationship among three entity types (e.g., \texttt{Doctor} prescribes \texttt{Medicine} to a \texttt{Patient} at a specific \texttt{Date}).
+    \item[N-ary (Degree N):] A relationship among more than three entity types.
+\end{description}
+
+\section{Cardinality Constraints}
+Cardinality defines the numerical ratio of entity occurrences in a relationship:
+\begin{description}
+    \item[One-to-One (1:1):] Each record in Entity A is related to at most one record in Entity B, and vice versa (e.g., \texttt{Manager} manages \texttt{Department}).
+    \item[One-to-Many (1:M):] One record in Entity A is associated with multiple records in Entity B, but each record in Entity B is associated with at most one record in Entity A (e.g., \texttt{Department} contains \texttt{Employees}). ``Exactly one'' only holds if B also has total participation.
+    \item[Many-to-Many (M:N):] Records in Entity A can relate to multiple records in Entity B, and vice versa (e.g., \texttt{Employee} works on multiple \texttt{Projects}).
+\end{description}
+
+\section{Participation Constraints}
+Participation defines whether all instances of an entity type must participate in a relationship:
+\begin{description}
+    \item[Total Participation (Mandatory):] Every instance of the entity must be involved in the relationship. Represented by a \textbf{double line} connecting the entity to the relationship. (For example, every \texttt{Car} must belong to a company). Any weak entity must have total participation.
+    \item[Partial Participation (Optional):] Some instances of the entity may participate, but it is not mandatory. Represented by a \textbf{single line}. (For example, not every \texttt{Employee} is allocated a company car).
+\end{description}
+
+\section{Database Keys}
+Keys ensure data integrity and define relations:
+\begin{description}
+    \item[Primary Key (PK):] A column or group of columns that uniquely identifies a row in a table. It cannot contain NULL values and must be unique.
+    \item[Unique Key:] Enforces uniqueness on a column but, unlike the Primary Key, accepts NULL. In SQL Server a \texttt{UNIQUE} constraint allows only \textbf{one} NULL (the ANSI standard and most other DBMSs allow many).
+    \item[Foreign Key (FK):] A column that references the primary key (or a unique key) of another table, or of the same table for recursive relationships. It enforces referential integrity and can be NULL unless declared \texttt{NOT NULL}.
+    \item[Super Key:] Any set of attributes that uniquely identifies a record (may contain redundant attributes).
+    \item[Candidate Key:] A \emph{minimal} super key (no attribute can be removed without losing uniqueness). One candidate key is chosen as the primary key; the others are called \emph{alternate keys}.
+    \item[Composite Key:] A key made of two or more attributes.
+\end{description}
+
+\section{Company Case Study ERD}
+Consider a company with employees, departments, projects, and dependents:
+\begin{itemize}
+    \item Employees have a name (Fname, Lname), SSN (key), birthdate, gender, and salary. Each employee must work for exactly one department, may be supervised by one supervisor (another employee), and works on one or more projects with a specified number of hours.
+    \item Departments have a unique name, unique number (DNUM), locations (multivalued), and exactly one manager (an employee); the manager's hire date is recorded.
+    \item Projects have a unique name, unique number (PNumber), location, and each project must be controlled by one department.
+    \item Dependents are weak entities identified through their employee; each has a name (partial key), gender, and birthdate.
+\end{itemize}
+
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabularx}{\textwidth}{l l X}
+        \toprule
+        \textbf{Relationship} & \textbf{Cardinality}      & \textbf{Participation}                                                       \\
+        \midrule
+        Works\_For            & Employee M : 1 Department & Both total (every employee has a department; every department has employees) \\
+        Manages               & Employee 1 : 1 Department & Employee partial, Department total (every department has a manager)          \\
+        Controls              & Department 1 : M Project  & Department partial, Project total                                            \\
+        Works\_On             & Employee M : N Project    & Both total; attribute \texttt{Hours}                                         \\
+        Has                   & Employee 1 : M Dependent  & Employee partial, Dependent total (identifying)                              \\
+        Supervises            & Employee 1 : M Employee   & Partial on both roles (recursive)                                            \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Company ERD structural constraints}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \resizebox{\textwidth}{!}{\CompanyERD}
+    \vspace{0.3cm}
+    \caption{Company ERD (single line = partial, double line = total participation)}
+\end{figure}
+
+\chapter{Enhanced Entity-Relationship Diagram (EERD)}
+
+\section{Supertype and Subtype Entities}
+\begin{description}
+    \item[Supertype:] A generic entity type that has a relationship with one or more subtypes.
+    \item[Subtype:] A subgrouping of entities in an entity type that has attributes distinct from those in other subgroups.
+    \item[Specialization vs. Generalization:] Two directions for building the same hierarchy. \emph{Specialization} is top-down: start from a supertype and define its subtypes (Vehicle $\rightarrow$ Car, Truck). \emph{Generalization} is bottom-up: notice that several entity types share attributes and extract a common supertype (Car, Truck $\rightarrow$ Vehicle). The resulting diagram is the same.
+\end{description}
+
+\section{Completeness Constraints}
+\begin{description}
+    \item[Total Specialization:] Every supertype instance must be a member of a subtype. Represented by a \textbf{double line} from the supertype to the specialization circle.
+    \item[Partial Specialization:] A supertype instance does not have to belong to any subtype. Represented by a \textbf{single line}.
+\end{description}
+
+\section{Disjoint Constraints}
+\begin{description}
+    \item[Disjoint Rule (d):] An instance can belong to at most one subtype (e.g., a \texttt{Vehicle} is either a \texttt{Car} or a \texttt{Truck}, but not both).
+    \item[Overlap Rule (o):] An instance can belong to multiple subtypes at the same time (e.g., a \texttt{Person} can be both a \texttt{Student} and an \texttt{Employee}).
+\end{description}
+The two constraints are independent, giving four combinations: total--disjoint, total--overlap, partial--disjoint, and partial--overlap. On each line from the circle to a subtype, a subset symbol ($\subset$, drawn as a U-shaped arc opening toward the circle) indicates that the subtype is a subset of the supertype.
+
+\newpage
+\section{Vehicle EERD Case Study}
+A vehicle has a vehicle-id, vehicle-name, and price. It can be specialized as a Car (with make and model) or a Truck (with glass-type, cab-type, and capacity). The specialization is disjoint and total.
+
+\begin{figure}[H]
+    \centering
+    \resizebox{0.8\textwidth}{!}{\VehicleEERD}
+    \vspace{0.3cm}
+    \caption{Vehicle Specialization EERD (total, disjoint)}
+\end{figure}
+
+\part{Relational Mapping}
+
+\chapter{Mapping ERD to Relational Schema}
+
+\section{Introduction}
+Mapping is the process of converting a conceptual model (ERD) into physical database tables.
+
+\section{Step 1: Mapping of Regular (Strong) Entity Types}
+For each strong entity type $E$, create a table $T$ containing all simple attributes of $E$. The primary key of $T$ is the key attribute of $E$.
+\begin{itemize}
+    \item \textbf{Composite Attributes:} Flattened by including only their simple component attributes in the table (e.g., \texttt{Name} $\rightarrow$ \texttt{Fname, Lname} inside the table).
+    \item \textbf{Derived Attributes:} Omitted from the physical tables by default. They can be computed dynamically or defined as computed columns.
+    \item \textbf{Multivalued Attributes:} Mapped by creating a \textbf{new separate table} containing the attribute value and a foreign key referencing the primary key of the parent entity. The primary key of the new table is a composite of the foreign key and the multivalued attribute value.
+\end{itemize}
+
+\section{Step 2: Mapping of Weak Entity Types}
+For each weak entity type $W$ with parent entity $E$, create a table $T_W$ containing the attributes of $W$. Add the primary key of the table corresponding to $E$ as a foreign key column in $T_W$. The primary key of $T_W$ is a composite key consisting of the parent's primary key and the weak entity's partial key. Set the foreign key constraint to \texttt{ON DELETE CASCADE} to clean up dependents if the parent is deleted.
+
+\section{Step 3: Mapping of Binary 1:1 Relationship Types}
+Choose one of the following approaches based on participation:
+\begin{description}
+    \item[Foreign Key Approach:] Put the primary key of Table A as a foreign key in Table B, and declare it \texttt{UNIQUE} so the relationship stays 1:1. If one side has total participation, put the foreign key on that total side to avoid NULL values. Any relationship attributes go in the same table as the foreign key.
+    \item[Merged Relation Approach:] Merge the tables if there is total participation from both sides (1:1 total-total).
+\end{description}
+
+\section{Step 4: Mapping of Binary 1:M Relationship Types}
+Identify the table representing the ``Many'' side. Add the primary key of the ``One'' side table as a foreign key in the ``Many'' side table. If the relationship has attributes, place them in the ``Many'' side table as well.
+
+\section{Step 5: Mapping of Binary M:N Relationship Types}
+For each M:N relationship, create a \textbf{new junction table} $R$. Include the primary keys of both participating tables as foreign keys in $R$. The primary key of $R$ is a composite key consisting of both foreign keys. Any attributes associated with the M:N relationship are placed in this new table.
+
+\section{Step 6: Mapping of Unary (Recursive) Relationships}
+\begin{description}
+    \item[Unary 1:1:] Add a foreign key column in the same table referencing its own primary key, and make it \texttt{UNIQUE} (e.g., \texttt{SpouseSSN} in \texttt{Person}).
+    \item[Unary 1:M:] Add a foreign key column in the same table referencing its own primary key (e.g., \texttt{Super\_SSN} pointing to \texttt{SSN} in the \texttt{Employee} table).
+    \item[Unary M:N:] Keep the entity table, and create a separate junction table containing two foreign keys that both reference the entity's primary key (e.g., \texttt{Prerequisite(CourseID, PrereqID)}). The primary key of the junction table is the composite of the two foreign keys.
+\end{description}
+
+\section{Step 7: Mapping of N-ary (Ternary) Relationships}
+For relationships of degree $\ge 3$, create a new table. Add the primary keys of all participating entities as foreign keys in this new table, and store any relationship attributes there. For an M:N:P relationship the primary key is the composite of all the foreign keys. If one side has cardinality 1, that side's foreign key is excluded from the primary key, because it is determined by the others.
+
+\section{EERD Mapping Strategies}
+When mapping supertypes and subtypes, three main strategies are used:
+\begin{description}
+    \item[Strategy 1 (Multiple Tables - Local Attributes):] Create a table for the supertype and separate tables for each subtype. Each subtype table contains its local attributes and a primary key that also acts as a foreign key pointing to the supertype table.
+    \item[Strategy 2 (Single Table - Nullable Columns):] Create a single table containing all supertype and subtype attributes. Add a discriminator column (e.g., \texttt{VehicleType}) and make all subtype attributes nullable. For overlapping specialization, use one yes/no flag column per subtype instead of a single discriminator.
+    \item[Strategy 3 (Multiple Tables - Subtypes Only):] Create tables for subtypes only, duplicating the supertype attributes in each. Applicable only for \textbf{total} specialization (otherwise supertype instances that belong to no subtype would be lost), and best suited to \textbf{disjoint} specialization (with overlap, shared data is duplicated across subtype tables).
+\end{description}
+
+Applied to the Vehicle EERD:
+\begin{description}
+    \item[Strategy 1:] \rel{Vehicle}{\pk{VehicleID}, VehicleName, Price}, \rel{Car}{\pk{\fk{VehicleID}}, Make, Model}, \rel{Truck}{\pk{\fk{VehicleID}}, GlassType, CabType, Capacity}
+    \item[Strategy 2:] \rel{Vehicle}{\pk{VehicleID}, VehicleName, Price, VehicleType, Make, Model, GlassType, CabType, Capacity}
+    \item[Strategy 3:] \rel{Car}{\pk{VehicleID}, VehicleName, Price, Make, Model}, \rel{Truck}{\pk{VehicleID}, VehicleName, Price, GlassType, CabType, Capacity}
+\end{description}
+
+\section{Case Study Mapping Solution}
+The mapped tables for the Company ERD are (primary keys underlined, foreign keys marked FK):
+\begin{enumerate}
+    \item \rel{Employee}{\pk{SSN}, Fname, Lname, Bdate, Gender, Salary, \fk{DNum}, \fk{Super\_SSN}} \\
+          \small (Works\_For 1:M $\rightarrow$ FK on the many side, NOT NULL because participation is total; Supervises $\rightarrow$ self-referencing FK)
+    \item \rel{Department}{\pk{DNUM}, DName (UNIQUE), \fk{MgrSSN}, HireDate} \\
+          \small (Manages 1:1 $\rightarrow$ FK on the total side, Department; the relationship attribute goes with it)
+    \item \rel{Dept\_Location}{\pk{\fk{DNum}, Location}}
+    \item \rel{Project}{\pk{PNumber}, PName (UNIQUE), Location, \fk{DNum}}
+    \item \rel{Works\_On}{\pk{\fk{ESSN}, \fk{PNum}}, Hours}
+    \item \rel{Dependent}{\pk{\fk{ESSN}, DependentName}, Gender, Bdate} \quad \small (FK with \texttt{ON DELETE CASCADE})
+\end{enumerate}
+
+\begin{figure}[H]
+    \centering
+    \resizebox{\textwidth}{!}{\CompanySchema}
+    \caption{Relational schema of the Company database (underlined = primary key; each arrow runs from a foreign key to the primary key it references)}
+\end{figure}
+
+\section{Implementing the Mapping in T-SQL}
+The script below creates the mapped Company schema in its own database. It shows how each ERD constraint becomes a SQL constraint, and where SQL cannot express the ERD directly. \texttt{Department} and \texttt{Employee} reference each other, so they are created first and linked afterwards:
+
+\begin{lstlisting}[language=SQL]
+CREATE DATABASE CompanyDB;
+GO
+USE CompanyDB;
+GO
+
+-- Department is created first; its manager FK is added later (circular reference)
+CREATE TABLE Department (
+    DNUM      INT          PRIMARY KEY,
+    DName     VARCHAR(50)  NOT NULL UNIQUE,      -- second key of the ERD
+    MgrSSN    CHAR(9)      NULL,                 -- Manages (FK added below)
+    HireDate  DATE         NULL                  -- attribute of Manages
+);
+
+CREATE TABLE Employee (
+    SSN        CHAR(9)       PRIMARY KEY,
+    Fname      VARCHAR(30)   NOT NULL,
+    Lname      VARCHAR(30)   NOT NULL,
+    Bdate      DATE,
+    Gender     CHAR(1)       CHECK (Gender IN ('M', 'F')),
+    Salary     DECIMAL(10,2) CHECK (Salary > 0),
+    DNum       INT           NOT NULL                    -- Works_For: total participation
+               REFERENCES Department(DNUM),
+    Super_SSN  CHAR(9)       NULL                        -- Supervises: recursive, partial
+               REFERENCES Employee(SSN)
+);
+
+-- Close the circle: Department.MgrSSN -> Employee.SSN
+ALTER TABLE Department
+    ADD CONSTRAINT FK_Department_Manager FOREIGN KEY (MgrSSN) REFERENCES Employee(SSN);
+
+-- 1:1 means an employee manages at most one department.
+-- A filtered unique index ignores the NULLs that exist while departments are being set up.
+CREATE UNIQUE INDEX UQ_Department_MgrSSN ON Department(MgrSSN) WHERE MgrSSN IS NOT NULL;
+\end{lstlisting}
+
+The remaining tables only reference tables that already exist:
+\enlargethispage{2\baselineskip}
+\begin{lstlisting}[language=SQL]
+-- Multivalued attribute Locations
+CREATE TABLE Dept_Location (
+    DNum      INT          REFERENCES Department(DNUM) ON DELETE CASCADE,
+    Location  VARCHAR(50),
+    PRIMARY KEY (DNum, Location)
+);
+CREATE TABLE Project (
+    PNumber   INT          PRIMARY KEY,
+    PName     VARCHAR(50)  NOT NULL UNIQUE,
+    Location  VARCHAR(50),
+    DNum      INT          NOT NULL REFERENCES Department(DNUM)  -- Controls (total)
+);
+-- M:N relationship with attribute Hours
+CREATE TABLE Works_On (
+    ESSN   CHAR(9)       REFERENCES Employee(SSN),
+    PNum   INT           REFERENCES Project(PNumber),
+    Hours  DECIMAL(4,1)  CHECK (Hours >= 0),
+    PRIMARY KEY (ESSN, PNum)
+);
+
+-- Weak entity: PK = owner's key + partial key, deleted together with its owner
+CREATE TABLE Dependent (
+    ESSN           CHAR(9)      REFERENCES Employee(SSN) ON DELETE CASCADE,
+    DependentName  VARCHAR(30),
+    Gender         CHAR(1)      CHECK (Gender IN ('M', 'F')),
+    Bdate          DATE,
+    PRIMARY KEY (ESSN, DependentName)
+);
+GO
+\end{lstlisting}
+
+Because \texttt{Employee} and \texttt{Department} reference each other, rows must be inserted in this order:
+\begin{lstlisting}[language=SQL]
+-- Insertion order breaks the circular dependency:
+INSERT INTO Department (DNUM, DName) VALUES (1, 'Research'); -- 1. no manager yet
+INSERT INTO Employee VALUES
+    ('123456789', 'Ahmed', 'Ali', '1990-03-15', 'M', 12000, 1, NULL); -- 2. employee
+UPDATE Department SET MgrSSN = '123456789', HireDate = '2024-01-01'
+WHERE DNUM = 1; -- 3. assign manager
+\end{lstlisting}
+
+\begin{warningbox}[What Foreign Keys Cannot Enforce]
+    \begin{itemize}[topsep=2pt, itemsep=1pt]
+        \item \textbf{Circular total participation:} the ERD says every department \emph{must} have a manager, but \texttt{MgrSSN} has to be nullable. SQL Server has no deferred constraints, so the department must exist before its first employee can reference it. Make it \texttt{NOT NULL} after loading the data, or enforce it with a trigger.
+        \item \textbf{Total participation of the referenced side:} a foreign key can force every employee to have a department, but not every department to have employees. Likewise, ``every employee works on at least one project'' (M:N) cannot be declared. These rules need triggers or application logic.
+    \end{itemize}
+\end{warningbox}
+
+\part{Database Normalization}
+
+\chapter{Normalization Theory \& Normal Forms}
+
+\section{Database Anomalies}
+Normalization is the process of organizing data to reduce redundancy and the anomalies it causes. It is applied to newly mapped tables during design, and also to existing databases that already suffer from the following anomalies:
+\begin{description}
+    \item[Insertion Anomaly:] The inability to insert certain data without introducing duplicate information or placeholder values (e.g., adding a new course requires creating a dummy student if they are in the same table).
+    \item[Deletion Anomaly:] The unintended loss of data when deleting a record (e.g., deleting a student removes the course information if they are stored in the same row).
+    \item[Modification (Update) Anomaly:] Redundant data updates that must be executed on multiple rows, risking partial updates (e.g., changing a teacher's name requires updating hundreds of student rows).
+\end{description}
+
+\section{Functional Dependencies (FD)}
+A functional dependency $X \rightarrow Y$ states that the value of column $X$ uniquely determines the value of column $Y$:
+\begin{enumerate}
+    \item \textbf{Full Functional Dependency:} Attribute $Y$ is fully functionally dependent on a composite primary key $X$ if it depends on the whole of $X$, and not on any subset of $X$.
+    \item \textbf{Partial Functional Dependency:} Occurs when a non-key attribute is determined by only a part of a composite primary key.
+    \item \textbf{Transitive Functional Dependency:} Occurs when a non-key attribute $Z$ is determined by another non-key attribute $Y$, which is in turn determined by the primary key $X$ ($X \rightarrow Y \rightarrow Z$).
+\end{enumerate}
+
+\section{The Normal Forms}
+Normalization is applied step-by-step:
+\begin{description}
+    \item[First Normal Form (1NF):] A table is in 1NF if and only if all attributes contain only atomic (indivisible) values, and there are no repeating groups or multivalued columns.
+    \item[Second Normal Form (2NF):] A table is in 2NF if it is in 1NF and contains \textbf{no partial dependencies}. Every non-key attribute must be fully dependent on the entire primary key.
+    \item[Third Normal Form (3NF):] A table is in 3NF if it is in 2NF and contains \textbf{no transitive dependencies}. Non-key attributes must not depend on other non-key attributes.
+    \item[Boyce--Codd Normal Form (BCNF):] A stricter 3NF: for every non-trivial dependency $X \rightarrow Y$, $X$ must be a super key. It matters only when a table has several overlapping candidate keys.
+\end{description}
+
+\section{Normalization Example}
+Consider the following student record table. Its values are atomic, so it is already in 1NF, but it still suffers from all three anomalies:
+\begin{table}[H]
+    \centering
+    \resizebox{\textwidth}{!}{
+        \begin{tabular}{llllllll}
+            \toprule
+            \textbf{SID (PK)} & \textbf{Sname} & \textbf{Bdate} & \textbf{City} & \textbf{ZipCode} & \textbf{Subject} & \textbf{Grade} & \textbf{Teacher} \\
+            \midrule
+            1                 & Ahmed          & 1980-01-01     & Cairo         & 1010             & DB               & A              & Hany             \\
+            1                 & Ahmed          & 1980-01-01     & Cairo         & 1010             & Math             & B              & Eman             \\
+            2                 & Ali            & 1983-05-12     & Alex          & 1111             & DB               & B              & Hany             \\
+            \bottomrule
+        \end{tabular}
+    }
+\end{table}
+
+This table has:
+\begin{itemize}
+    \item Composite key: \texttt{(SID, Subject)}.
+    \item Full dependency: \texttt{(SID, Subject)} $\rightarrow$ \texttt{Grade}.
+    \item Partial dependency: \texttt{SID} $\rightarrow$ \texttt{Sname, Bdate, City, ZipCode}. (Violates 2NF).
+    \item Partial dependency: \texttt{Subject} $\rightarrow$ \texttt{Teacher} (\texttt{Subject} is only part of the key, assuming one teacher per subject). (Violates 2NF).
+    \item Transitive dependency: \texttt{SID} $\rightarrow$ \texttt{ZipCode} $\rightarrow$ \texttt{City}. (Violates 3NF; it appears once the 2NF split puts \texttt{ZipCode} and \texttt{City} in \texttt{Student}).
+\end{itemize}
+
+\subsection{Normalization Solution}
+To resolve these anomalies, we split the table into four 3NF relations:
+\begin{enumerate}
+    \item \rel{Student}{\pk{SID}, Sname, Bdate, \fk{ZipCode}} \quad (2NF: removes partial dependency on \texttt{SID})
+    \item \rel{Zip\_City}{\pk{ZipCode}, City} \quad (3NF: removes the transitive dependency)
+    \item \rel{Course\_Teacher}{\pk{Subject}, Teacher} \quad (2NF: removes partial dependency on \texttt{Subject})
+    \item \rel{Enrollment}{\pk{\fk{SID}, \fk{Subject}}, Grade} \quad (only fully dependent attributes remain)
+\end{enumerate}
+
+\part{Microsoft SQL Server Architecture \& T-SQL}
+
+\chapter{SQL Server Architecture \& Installation}
+\enlargethispage{2\baselineskip}
+
+\vspace{-0.5\baselineskip}
+\section{System Databases}
+When SQL Server is installed, it initializes four visible system databases (plus the hidden, read-only \textbf{Resource} database that stores system objects):
+\begin{description}
+    \item[Master:] Holds system-level configurations, logins, and metadata for all other databases.
+    \item[Model:] Template database. Any tables, types, or settings added to this database are inherited by any newly created databases.
+    \item[MSDB:] Used by SQL Server Agent for jobs, schedules, and alerts; also stores backup/restore history and Database Mail data.
+    \item[TempDB:] A shared temporary workspace for temporary tables, table variables, and intermediate results of sorts and hash joins. It is re-created every time SQL Server restarts.
+\end{description}
+
+\vspace{-0.5\baselineskip}
+\section{Database Files}
+SQL Server stores databases in physical files:
+\begin{description}
+    \item[.mdf (Primary Data File):] Contains the startup information and the actual database data (tables, indexes).
+    \item[.ldf (Transaction Log File):] Stores the sequence of all transactions and log entries for recovery purposes.
+    \item[.ndf (Secondary Data File):] Optional files used to spread data across multiple physical drives.
+\end{description}
+
+\vspace{-0.5\baselineskip}
+\section{Authentication Modes}
+SQL Server offers two authentication \emph{methods}:
+\begin{enumerate}
+    \item \textbf{Windows Authentication:} Integrates with Windows credentials (SSPI); no separate password needed.
+    \item \textbf{SQL Server Authentication:} Uses logins and passwords managed directly inside SQL Server.
+\end{enumerate}
+The server operates in \textbf{Windows Authentication mode} (method 1 only) or \textbf{Mixed Mode} (both allowed). SQL Server Authentication cannot be used alone.
+
+\vspace{-0.5\baselineskip}
+\section{Database Instances}
+An instance is a complete running copy of the SQL Server database engine:
+\begin{description}
+    \item[Default Instance:] Runs under the computer name (only one per machine).
+    \item[Named Instance:] Identified by computer name + instance name (e.g., \texttt{SERVER\textbackslash SQLEXPRESS}). Multiple named instances can coexist.
+\end{description}
+
+\vspace{-0.5\baselineskip}
+\section{Database Integrity Levels}
+Integrity constraints ensure database consistency across four levels:
+\begin{description}
+    \item[Domain Integrity:] Ensures valid values inside a column (data types, default values, check constraints, rules).
+    \item[Entity Integrity:] Ensures each row can be uniquely identified (Primary Key, Unique constraints).
+    \item[Referential Integrity:] Ensures consistency across related tables (Foreign Key constraints).
+    \item[User-Defined Integrity:] Business rules that do not fit the other levels, enforced with triggers, stored procedures, or application code (e.g., ``an employee cannot earn more than their manager'').
+\end{description}
+
+\chapter{T-SQL Statement Categories}
+
+\section{The SQL Standard \& Dialects}
+ANSI SQL is the standard SQL syntax. Different database vendors implement custom extensions (dialects). In Microsoft SQL Server, this dialect is \textbf{Transact-SQL (T-SQL)}.
+
+\section{T-SQL Categories}
+T-SQL commands are divided into five main categories:
+\begin{enumerate}
+    \item \textbf{DDL (Data Definition Language):} Defines the database structures and schemas.
+          \begin{itemize}
+              \item \texttt{CREATE TABLE}, \texttt{ALTER TABLE}, \texttt{DROP TABLE}, \texttt{CREATE DATABASE}.
+          \end{itemize}
+    \item \textbf{DML (Data Manipulation Language):} Modifies data values.
+          \begin{itemize}
+              \item \texttt{INSERT}, \texttt{UPDATE}, \texttt{DELETE}, \texttt{MERGE}.
+          \end{itemize}
+    \item \textbf{DQL (Data Query Language):} Retrieves data. (Microsoft's documentation counts \texttt{SELECT} as part of DML; ITI lists it separately.)
+          \begin{itemize}
+              \item \texttt{SELECT}.
+          \end{itemize}
+    \item \textbf{DCL (Data Control Language):} Manages security permissions.
+          \begin{itemize}
+              \item \texttt{GRANT}, \texttt{REVOKE}.
+          \end{itemize}
+    \item \textbf{TCL (Transaction Control Language):} Manages transaction blocks.
+          \begin{itemize}
+              \item \texttt{BEGIN TRANSACTION}, \texttt{COMMIT}, \texttt{ROLLBACK}, \texttt{SAVE TRANSACTION}.
+          \end{itemize}
+\end{enumerate}
+
+\chapter{T-SQL Data Types}
+Choose the smallest type that safely holds the data: smaller rows mean less storage, less memory, and faster queries.
+
+\section{Numeric Data Types}
+\begin{description}
+    \item[\texttt{BIT}:] Holds 0, 1, or NULL.
+    \item[\texttt{TINYINT}:] 1 byte. Range: 0 to 255.
+    \item[\texttt{SMALLINT}:] 2 bytes. Range: -32,768 to 32,767.
+    \item[\texttt{INT}:] 4 bytes. Range: -2,147,483,648 to 2,147,483,647.
+    \item[\texttt{BIGINT}:] 8 bytes. Range: -2\textsuperscript{63} to 2\textsuperscript{63}-1.
+    \item[\texttt{DECIMAL(p, s) / NUMERIC(p, s)}:] Exact fixed-point number with precision $p$ (total digits) and scale $s$ (digits after the point).
+    \item[\texttt{MONEY / SMALLMONEY}:] Exact currency values with 4 decimal places.
+    \item[\texttt{FLOAT(n) / REAL}:] Approximate floating-point numbers. Avoid them for money, because they cannot represent many decimal fractions exactly.
+\end{description}
+
+\section{Character String Data Types}
+\begin{description}
+    \item[\texttt{CHAR(n)}:] Fixed-length non-Unicode string (1 byte per character in the column's code page); padded with spaces.
+    \item[\texttt{VARCHAR(n)}:] Variable-length non-Unicode string. \texttt{VARCHAR(MAX)} stores up to 2\,GB.
+    \item[\texttt{NCHAR(n)}:] Fixed-length Unicode string (2 bytes per character).
+    \item[\texttt{NVARCHAR(n)}:] Variable-length Unicode string. Use it for text that may contain Arabic or other non-Latin characters.
+\end{description}
+
+\section{Date and Time Data Types}
+\begin{description}
+    \item[\texttt{DATE}:] Holds date values only (\texttt{YYYY-MM-DD}).
+    \item[\texttt{TIME}:] Holds time values only (\texttt{hh:mm:ss[.nnnnnnn]}).
+    \item[\texttt{DATETIME}:] Legacy date and time type; values are rounded to increments of .000, .003, or .007 seconds (about 3.33\,ms accuracy).
+    \item[\texttt{DATETIME2}:] Modern, high-precision date and time (accurate to 100 nanoseconds).
+\end{description}
+
+\section{Special and Deprecated Data Types}
+\begin{itemize}
+    \item \textbf{Special:} \texttt{UNIQUEIDENTIFIER} (stores 16-byte GUIDs generated via \texttt{NEWID()}), \texttt{XML}, \texttt{TABLE}.
+    \item \textbf{Deprecated:} \texttt{TEXT} (use \texttt{VARCHAR(MAX)}), \texttt{NTEXT} (use \texttt{NVARCHAR(MAX)}), and \texttt{IMAGE} (use \texttt{VARBINARY(MAX)}).
+\end{itemize}
+
+\part{Querying \& Data Manipulation}
+
+\chapter{Fundamentals of SELECT \& DML}
+
+\begin{keyconcept}[Sample Databases Used in This Guide]
+    \begin{description}
+        \item[\texttt{ITITestDB}:] Created below. Its \texttt{Employee} and \texttt{Department} tables (built in \emph{Join Demonstrations}) are the running example for every query from that point to the end of the guide.
+        \item[\texttt{CompanyDB}:] The Company case study, created by the mapping script in the Relational Mapping part.
+    \end{description}
+\end{keyconcept}
+
+\section{Basic DDL \& DML Commands}
+The script below creates a table, changes its structure, and then inserts, updates, and deletes rows:
+
+\begin{lstlisting}[language=SQL]
+-- Creating a test database
+CREATE DATABASE ITITestDB;
+GO  -- USE must run in a later batch than CREATE DATABASE
+USE ITITestDB;
+GO
+
+-- Creating a baseline table
+CREATE TABLE Employee (
+    ID INT PRIMARY KEY,
+    Name VARCHAR(50) DEFAULT 'New Employee',
+    Age INT NOT NULL,
+    Birthdate DATE
+);
+-- Altering the table schema
+ALTER TABLE Employee ADD Salary INT;
+ALTER TABLE Employee ALTER COLUMN Salary FLOAT;
+ALTER TABLE Employee DROP COLUMN Salary;
+
+-- Inserting values
+INSERT INTO Employee (ID, Name, Age, Birthdate) 
+VALUES (1, 'Ahmed', 20, '2006-07-27');
+-- Inserting multiple values
+INSERT INTO Employee VALUES
+(2, 'Ali', 25, '2001-05-24'),
+(3, 'Omar', 21, '2005-04-12');
+-- Updating data
+UPDATE Employee 
+SET Name = 'Ashraf'
+WHERE ID = 3;
+-- Deleting a row
+DELETE FROM Employee 
+WHERE ID = 2;
+\end{lstlisting}
+
+\section{DQL Projection and Filtering}
+\begin{lstlisting}[language=SQL]
+-- Select projection
+SELECT ID, Name FROM Employee;
+
+-- Filtering with logical operators
+SELECT * FROM Employee WHERE Age > 20;
+
+-- Sorting outputs
+SELECT * FROM Employee ORDER BY Age DESC;
+
+-- Distinct output values
+SELECT DISTINCT Age FROM Employee;
+
+-- Membership and range queries
+SELECT * FROM Employee WHERE Name IN ('Ahmed', 'Ashraf');
+SELECT * FROM Employee WHERE Age BETWEEN 20 AND 24;
+\end{lstlisting}
+
+\chapter{Joins}
+
+\section{Types of Joins}
+Joins combine columns from two or more tables based on matching values:
+\begin{description}
+    \item[INNER JOIN:] Returns only rows that have a match in both tables.
+    \item[LEFT JOIN:] All rows from the left table, plus matching rows from the right table (NULL where there is no match).
+    \item[RIGHT JOIN:] All rows from the right table, plus matching rows from the left table (NULL where there is no match).
+    \item[FULL JOIN:] All rows from both tables, with NULL if there is no match.
+    \item[CROSS JOIN:] Cartesian product of both tables.
+    \item[SELF JOIN:] Not a separate join type: any of the joins above where a table is joined to itself, using two different aliases.
+\end{description}
+
+\section{Join Demonstrations}
+The following tables are used by the join examples and by the rest of the guide. The \texttt{Employee} table from the previous section is dropped first, because the new one has a different structure:
+\begin{lstlisting}[language=SQL]
+DROP TABLE IF EXISTS Employee;   -- SQL Server 2016+
+DROP TABLE IF EXISTS Department;
+
+CREATE TABLE Department (
+    DepartmentID INT PRIMARY KEY,
+    DepartmentName VARCHAR(50)
+);
+
+INSERT INTO Department VALUES
+(1, 'HR'),
+(2, 'IT'),
+(3, 'Finance'),
+(4, 'Marketing'),
+(5, 'Operations'); -- empty department for outer joins
+
+CREATE TABLE Employee (
+    EmployeeID INT PRIMARY KEY,
+    Name VARCHAR(50),
+    Age INT,
+    DepartmentID INT NULL REFERENCES Department(DepartmentID),
+    ManagerID INT NULL REFERENCES Employee(EmployeeID)
+);
+
+INSERT INTO Employee VALUES
+(1, 'Ahmed', 30, 1, NULL), -- HR employee with no manager
+(2, 'Sara', 25, 2, 1), -- IT employee managed by Ahmed
+(3, 'Ali', 35, 3, 1), -- Finance employee managed by Ahmed
+(4, 'Mona', 28, 2, 3), -- IT employee managed by Ali
+(5, 'Omar', 40, NULL, NULL), -- Employee with no department and no manager
+(6, 'Laila', 29, 4, NULL), -- Marketing employee with no manager
+(7, 'Khaled', 38, 3, 2); -- Finance employee managed by Sara
+\end{lstlisting}
+
+\subsection{Join Examples}
+\begin{lstlisting}[language=SQL]
+-- 1. Inner Join
+SELECT E.Name, D.DepartmentName 
+FROM Employee E INNER JOIN Department D 
+ON E.DepartmentID = D.DepartmentID;
+
+-- 2. Left Outer Join
+SELECT E.Name, D.DepartmentName 
+FROM Employee E LEFT OUTER JOIN Department D 
+ON E.DepartmentID = D.DepartmentID;
+
+-- 3. Right Outer Join
+SELECT E.Name, D.DepartmentName 
+FROM Employee E RIGHT OUTER JOIN Department D 
+ON E.DepartmentID = D.DepartmentID;
+
+-- 4. Full Outer Join
+SELECT E.Name, D.DepartmentName 
+FROM Employee E FULL OUTER JOIN Department D 
+ON E.DepartmentID = D.DepartmentID;
+
+-- 5. Cross Join
+SELECT E.Name, D.DepartmentName 
+FROM Employee E CROSS JOIN Department D;
+
+-- 6. Self Join (Hierarchical: Employee and Manager names)
+-- E2 represents the parent (manager), while E1 represents the child (employee) which contains the foreign key referring to the manager.
+SELECT E1.Name AS EmployeeName, E2.Name AS ManagerName
+FROM Employee E1 INNER JOIN Employee E2 
+ON E2.EmployeeID = E1.ManagerID;
+\end{lstlisting}
+
+\subsection{DML Statements using Joins}
+In T-SQL, \texttt{UPDATE} and \texttt{DELETE} can use a join to decide which rows to change:
+\begin{lstlisting}[language=SQL]
+-- Updating employees based on a join condition
+UPDATE E
+SET E.Age += 1
+FROM Employee E INNER JOIN Department D
+ON E.DepartmentID = D.DepartmentID
+WHERE D.DepartmentName = 'Finance';
+
+-- Deleting rows based on a join condition
+DELETE E
+FROM Employee E INNER JOIN Department D
+ON E.DepartmentID = D.DepartmentID
+WHERE D.DepartmentName = 'Marketing';
+\end{lstlisting}
+
+\chapter{Functions, Grouping \& Query Mechanics}
+
+\section{Aggregate Functions}
+Aggregate functions summarize multiple values into a single output:
+\begin{itemize}
+    \item \texttt{COUNT()}, \texttt{SUM()}, \texttt{AVG()}, \texttt{MIN()}, \texttt{MAX()}.
+\end{itemize}
+
+\section{GROUP BY and HAVING}
+The \texttt{GROUP BY} clause groups matching rows together. The \texttt{HAVING} clause acts as a filter on these aggregated groups (unlike \texttt{WHERE}, which filters individual rows before grouping):
+\begin{lstlisting}[language=SQL]
+SELECT DepartmentID, COUNT(*) AS TotalEmployees, SUM(Age) AS TotalAge
+FROM Employee
+WHERE Age > 20
+GROUP BY DepartmentID
+HAVING COUNT(*) > 1;
+\end{lstlisting}
+
+\section{Null Handling \& Concatenation}
+\begin{description}
+    \item[\texttt{ISNULL(expr, replacement)}:] Replaces NULL with a specified fallback value (takes exactly two arguments).
+    \item[\texttt{COALESCE(val1, val2, ...)}:] Returns the first non-NULL expression in the arguments list.
+    \item[\texttt{CONCAT(val1, val2, ...)}:] Combines string values, automatically converting numeric inputs and treating NULL values as empty strings.
+\end{description}
+
+\begin{lstlisting}[language=SQL]
+-- Replacing NULL manager values with 555
+SELECT Name, ISNULL(ManagerID, 555) FROM Employee;
+
+-- First non-NULL value among ManagerID, DepartmentID, and fallback
+SELECT Name, COALESCE(ManagerID, DepartmentID, 111) FROM Employee;
+
+-- String concatenation
+SELECT CONCAT(Name, ' works in Dept ', DepartmentID) FROM Employee;
+\end{lstlisting}
+
+\section{Pattern Matching (LIKE operator)}
+The \texttt{LIKE} operator uses \texttt{\%} (any sequence of zero or more characters), \texttt{\_} (exactly one character), \texttt{[ ]} (one character from a set or range), and \texttt{[\^{}]} (one character not in the set). With the default case-insensitive collation, \texttt{'a\%'} also matches \texttt{'Ahmed'}:
+\begin{lstlisting}[language=SQL]
+-- This will fetch all values starting with 'a' and ending with 'm'
+SELECT * FROM Employee WHERE Name LIKE 'a%m';
+\end{lstlisting}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{lll}
+        \toprule
+        \textbf{Pattern}       & \textbf{Description}                   & \textbf{Example Matches}                    \\
+        \midrule
+        \texttt{'a\%m'}        & Starts with `a', ends with `m'         & \texttt{adam}, \texttt{alarm}               \\
+        \texttt{'\%g'}         & Ends with `g'                          & \texttt{king}, \texttt{running}             \\
+        \texttt{'\%v\_'}       & Second to last character is `v'        & \texttt{live}, \texttt{cave}                \\
+        \texttt{'[atd]\%'}     & Starts with `a', `t', or `d'           & \texttt{apple}, \texttt{tree}, \texttt{dog} \\
+        \texttt{'[\^{}atd]\%'} & Does not start with `a', `t', or `d'   & \texttt{sun}, \texttt{moon}                 \\
+        \texttt{'[a-r]\%'}     & Starts with any letter from `a' to `r' & \texttt{boy}, \texttt{pencil}               \\
+        \texttt{'\%[\%]'}      & Ends with the literal character `\%'   & \texttt{50\%}                               \\
+        \bottomrule
+    \end{tabular}
+    \caption{LIKE Pattern Matching Wildcards}
+\end{table}
+
+\section{Execution Order in SQL Server}
+Although written in a specific order, SQL Server executes query clauses in a different logical sequence. This \emph{logical} order explains why aliases defined in the \texttt{SELECT} clause cannot be referenced in \texttt{WHERE}, \texttt{GROUP BY}, or \texttt{HAVING}. (The optimizer may physically execute the steps differently, but the result is always as if this order were followed.)
+\begin{enumerate}
+    \item \textbf{\texttt{FROM} \& \texttt{JOIN}:} Defines and joins the source tables.
+    \item \textbf{\texttt{WHERE}:} Filters individual rows. It runs before grouping, which is why it cannot contain aggregate functions such as \texttt{COUNT(*)}.
+    \item \textbf{\texttt{GROUP BY}:} Aggregates rows into groups.
+    \item \textbf{\texttt{HAVING}:} Filters the grouped aggregates.
+    \item \textbf{\texttt{SELECT}:} Selects columns and computes expressions/aliases.
+    \item \textbf{\texttt{DISTINCT}:} Removes duplicate rows.
+    \item \textbf{\texttt{ORDER BY}:} Sorts the output rows.
+    \item \textbf{\texttt{TOP} / \texttt{OFFSET-FETCH}:} Restricts the final row count.
+\end{enumerate}
+Because \texttt{ORDER BY} runs after \texttt{SELECT}, it is the only clause that \emph{can} reference a column alias.
+
+\section{Conditional Logic (CASE \& IIF)}
+\begin{description}
+    \item[\texttt{CASE}:] The standard conditional logic control structure.
+    \item[\texttt{IIF}:] A shorthand equivalent to a ternary operator, useful for simple true/false checks.
+\end{description}
+\begin{lstlisting}[language=SQL]
+SELECT Name, Age,
+       CASE 
+           WHEN Age < 25 THEN 'Junior'
+           WHEN Age BETWEEN 25 AND 35 THEN 'Mid-Level'
+           ELSE 'Senior'
+       END AS SeniorityLevel,
+       IIF(Age >= 30, 'Experienced', 'Young') AS ExperienceTag
+FROM Employee;
+\end{lstlisting}
+
+\section{Data Type Conversion Functions}
+The main T-SQL conversion functions are:
+\begin{description}
+    \item[\texttt{CAST(value AS datatype)}:] The standard ANSI SQL type conversion function.
+    \item[\texttt{CONVERT(datatype, value [, style])}:] A SQL Server-specific function that includes formatting styles, especially useful when formatting date-to-string values.
+    \item[\texttt{PARSE(string AS datatype)}:] Converts a string representation of a value (e.g., currency) to the specified datatype.
+    \item[\texttt{TRY\_CAST}, \texttt{TRY\_CONVERT}, \texttt{TRY\_PARSE}:] Same as their counterparts, but return NULL instead of raising an error when the conversion fails.
+\end{description}
+\begin{lstlisting}[language=SQL]
+SELECT CAST('2024-01-15' AS DATE);
+SELECT CONVERT(VARCHAR(10), GETDATE(), 103);   -- dd/mm/yyyy
+SELECT PARSE('$1,250.50' AS MONEY USING 'en-US');
+SELECT TRY_CAST('abc' AS INT);                 -- NULL, no error
+\end{lstlisting}
+
+\section{Date Operations}
+\begin{lstlisting}[language=SQL]
+-- Fetching system times
+SELECT GETDATE(), SYSDATETIME();
+
+-- Fetching the end of the month for a specific date
+SELECT EOMONTH(GETDATE());
+
+-- Extracting parts of a date
+SELECT YEAR(GETDATE()), MONTH(GETDATE()), DAY(GETDATE());
+SELECT DATEPART(WEEKDAY, GETDATE()), DATENAME(MONTH, GETDATE());
+
+-- Date arithmetic
+SELECT DATEADD(DAY, 30, GETDATE());                       -- 30 days from now
+SELECT DATEDIFF(YEAR, '2000-05-20', GETDATE());           -- difference in year boundaries
+\end{lstlisting}
+
+\chapter{Subqueries \& Set Operations}
+
+\section{Subqueries}
+A subquery is a nested query enclosed in parentheses. It can be used within search conditions or inside the projection list:
+\begin{lstlisting}[language=SQL]
+-- Scalar subquery (returns a single value)
+SELECT Name, Age 
+FROM Employee 
+WHERE Age > (SELECT AVG(Age) FROM Employee);
+
+-- Subquery in the SELECT list
+SELECT Name, (SELECT COUNT(*) FROM Employee) AS TotalEmployees
+FROM Employee;
+
+-- Multi-valued subquery with IN
+SELECT Name 
+FROM Employee 
+WHERE DepartmentID IN (SELECT DepartmentID FROM Department WHERE DepartmentName LIKE 'I%');
+\end{lstlisting}
+
+\section{Set Operations (Union Family)}
+Set operators combine the result sets of multiple queries:
+\begin{description}
+    \item[\texttt{UNION ALL}:] Combines result sets directly. Duplicate records are retained. Fast.
+    \item[\texttt{UNION}:] Combines result sets and removes duplicate rows. Slower, because removing duplicates requires an extra sort or hash step. The output order is \emph{not} guaranteed; use \texttt{ORDER BY} if order matters.
+    \item[\texttt{INTERSECT}:] Returns only rows that are common to both queries.
+    \item[\texttt{EXCEPT}:] Returns rows from the first query that are not present in the second query.
+\end{description}
+
+\begin{lstlisting}[language=SQL]
+-- All queries must return the same number of columns with compatible types.
+-- Employees in IT, or older than 30 (each name listed once)
+SELECT Name FROM Employee WHERE DepartmentID = 2
+UNION
+SELECT Name FROM Employee WHERE Age > 30;
+
+-- Employees who are also managers of someone
+SELECT EmployeeID FROM Employee
+INTERSECT
+SELECT ManagerID FROM Employee;
+
+-- Departments that have no employees
+SELECT DepartmentID FROM Department
+EXCEPT
+SELECT DepartmentID FROM Employee;
+\end{lstlisting}
+
+\chapter{Advanced Query Techniques}
+
+\section{TOP and TOP WITH TIES}
+\begin{description}
+    \item[\texttt{TOP(N)}:] Returns the first $N$ rows.
+    \item[\texttt{TOP(N) WITH TIES}:] Used in conjunction with \texttt{ORDER BY}. If multiple rows have the same value as the $N$\textsuperscript{th} row, all matching rows are returned. This can result in more than $N$ rows being returned.
+\end{description}
+\begin{lstlisting}[language=SQL]
+-- Returns the 3 oldest employees, including anyone tied with the 3rd
+SELECT TOP 3 WITH TIES * 
+FROM Employee 
+ORDER BY Age DESC;
+\end{lstlisting}
+
+\vspace{-0.5\baselineskip}
+\section{SELECT INTO (Copying Data)}
+Creates a new table and inserts query results into it. Only column names, data types, nullability, the data, and the \texttt{IDENTITY} property are copied; constraints, indexes, and triggers are \emph{not}:
+\begin{lstlisting}[language=SQL]
+-- Copying table structure and data
+SELECT * INTO EmployeeArchive FROM Employee;
+
+-- Copying table schema only (without data)
+SELECT * INTO EmptyEmployeeCopy FROM Employee WHERE 1 = 0;
+\end{lstlisting}
+
+\vspace{-0.5\baselineskip}
+\section{Random Ordering}
+To randomly order rows in T-SQL, you can sort by the \texttt{NEWID()} function:
+\begin{lstlisting}[language=SQL]
+-- How it works: NEWID() generates a unique GUID for each row. 
+-- Sorting by it causes the query engine to sort rows in a random order.
+SELECT * FROM Employee ORDER BY NEWID();
+
+-- Fetching a random sample of 5 employees
+SELECT TOP 5 * FROM Employee ORDER BY NEWID();
+\end{lstlisting}
+
+\vspace{-0.5\baselineskip}
+\section{Ranking Functions}
+Ranking functions compute a rank value for each row within a partition:
+\begin{description}
+    \item[\texttt{ROW\_NUMBER()}:] Assigns a unique sequential integer to each row, starting at 1.
+    \item[\texttt{RANK()}:] Assigns ranks. If there are ties, they receive the same rank, and subsequent rank values are skipped.
+    \item[\texttt{DENSE\_RANK()}:] Assigns ranks. Ties receive the same rank, but no rank values are skipped.
+    \item[\texttt{NTILE(N)}:] Divides rows into $N$ buckets and returns the bucket number for each row.
+\end{description}
+\begin{lstlisting}[language=SQL]
+SELECT Name, Age, DepartmentID,
+       ROW_NUMBER() OVER(PARTITION BY DepartmentID ORDER BY Age DESC) AS RowNum,
+       RANK() OVER(PARTITION BY DepartmentID ORDER BY Age DESC) AS Rnk,
+       DENSE_RANK() OVER(PARTITION BY DepartmentID ORDER BY Age DESC) AS DenseRnk,
+       NTILE(3) OVER(ORDER BY Age DESC) AS Bucket
+FROM Employee;
+\end{lstlisting}
+
+\section{Offset \& Analytic Window Functions}
+These window functions allow accessing values from other rows without self-joins:
+\begin{description}
+    \item[\texttt{LAG(col, offset)}:] Accesses a column value from a previous row.
+    \item[\texttt{LEAD(col, offset)}:] Accesses a column value from a subsequent row.
+    \item[\texttt{FIRST\_VALUE(col)}:] Accesses the first value in the partition.
+    \item[\texttt{LAST\_VALUE(col)}:] Accesses the last value in the partition.
+\end{description}
+\begin{lstlisting}[language=SQL]
+SELECT Name, Age, DepartmentID,
+       LAG(Age, 1) OVER(PARTITION BY DepartmentID ORDER BY Age) AS PrevAge,
+       LEAD(Age, 1) OVER(PARTITION BY DepartmentID ORDER BY Age) AS NextAge,
+       FIRST_VALUE(Name) OVER(PARTITION BY DepartmentID ORDER BY Age) AS Youngest,
+       LAST_VALUE(Name)  OVER(PARTITION BY DepartmentID ORDER BY Age
+                              ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS Oldest
+FROM Employee;
+\end{lstlisting}
+\begin{warningbox}
+    With \texttt{ORDER BY}, the default window frame is \texttt{RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW}. Without an explicit frame, \texttt{LAST\_VALUE} therefore returns the \emph{current} row's value (or the last of its ties), not the last value of the partition.
+\end{warningbox}
+
+\section{Aggregates: ROLLUP, CUBE, and GROUPING SETS}
+\begin{description}
+    \item[\texttt{ROLLUP}:] Generates hierarchical subtotal rows from right to left.
+    \item[\texttt{CUBE}:] Generates subtotals for all possible combinations of grouped columns.
+    \item[\texttt{GROUPING SETS}:] Explicitly defines the grouping combinations to aggregate.
+\end{description}
+\begin{lstlisting}[language=SQL]
+SELECT DepartmentID, ManagerID, SUM(Age) AS TotalAge
+FROM Employee
+GROUP BY ROLLUP(DepartmentID, ManagerID);
+\end{lstlisting}
+
+\newpage
+\section{Pivot and Unpivot}
+\texttt{PIVOT} turns distinct row values into column headers. The pivoted column (\texttt{DepartmentName}) and the aggregated column (\texttt{Age}) are consumed by the operator, so they cannot appear in the outer \texttt{SELECT}; every other source column becomes a grouping column. Note that \texttt{AVG} of an \texttt{INT} column returns an \texttt{INT} (truncated); use \texttt{AVG(Age * 1.0)} for decimals.
+\begin{lstlisting}[language=SQL]
+-- Average age per department, as one row
+SELECT 'Average Age' AS Metric, [HR], [IT], [Finance]
+FROM (
+    SELECT D.DepartmentName, E.Age
+    FROM Employee E INNER JOIN Department D ON E.DepartmentID = D.DepartmentID
+) AS SourceTable
+PIVOT (
+    AVG(Age) FOR DepartmentName IN ([HR], [IT], [Finance])
+) AS PivotTable;
+
+-- UNPIVOT: turning columns back into rows
+SELECT Metric, DepartmentName, AvgAge
+FROM (SELECT 'Average Age' AS Metric, 30 AS [HR], 27 AS [IT], 36 AS [Finance]) AS Wide
+UNPIVOT (
+    AvgAge FOR DepartmentName IN ([HR], [IT], [Finance])
+) AS UnpivotTable;
+\end{lstlisting}
+
+\part{Constraints \& Data Integrity}
+
+\chapter{SQL Constraints \& Referential Actions}
+
+\section{Supported Constraints}
+SQL Server enforces domain, entity, and referential integrity using constraints:
+\begin{enumerate}
+    \item \textbf{\texttt{NOT NULL}:} Prevents a column from accepting NULL values.
+    \item \textbf{\texttt{UNIQUE}:} Ensures all values in a column (or composite group) are unique.
+    \item \textbf{\texttt{PRIMARY KEY}:} Combines \texttt{NOT NULL} and \texttt{UNIQUE}; only one per table.
+    \item \textbf{\texttt{FOREIGN KEY}:} Enforces referential integrity.
+    \item \textbf{\texttt{CHECK}:} Validates values against a logical boolean condition.
+    \item \textbf{\texttt{DEFAULT}:} Sets a fallback value if no value is provided during insertion.
+\end{enumerate}
+
+\section{Referential Actions (Foreign Key Options)}
+When a row in a parent table is updated or deleted, SQL Server can cascade changes to the child table:
+\begin{description}
+    \item[\texttt{NO ACTION} (Default):] Rejects the delete or update on the parent row if dependent rows exist.
+    \item[\texttt{CASCADE}:] Automatically deletes or updates corresponding rows in the child table.
+    \item[\texttt{SET NULL}:] Sets the foreign key column in the child rows to NULL (the column must be nullable).
+    \item[\texttt{SET DEFAULT}:] Sets the foreign key column in the child rows to its defined default value.
+\end{description}
+
+\begin{lstlisting}[language=SQL]
+CREATE TABLE Doctor (
+    DoctorID INT PRIMARY KEY,
+    Name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Patient (
+    PatientID INT PRIMARY KEY,
+    Name VARCHAR(100) NOT NULL,
+    DoctorID INT REFERENCES Doctor(DoctorID) 
+        ON DELETE SET NULL 
+        ON UPDATE CASCADE
+);
+\end{lstlisting}
+
+\section{DROP vs. DELETE vs. TRUNCATE}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{llll}
+        \toprule
+        \textbf{Feature}      & \textbf{DELETE}      & \textbf{TRUNCATE}    & \textbf{DROP}        \\
+        \midrule
+        Category              & DML                  & DDL                  & DDL                  \\
+        Removes               & Selected rows        & All rows             & Table + structure    \\
+        \texttt{WHERE} clause & Supported            & Not supported        & Not supported        \\
+        Logging               & Every deleted row    & Page deallocations   & Page deallocations   \\
+        Speed on large tables & Slow                 & Fast                 & Fast                 \\
+        Identity reset        & No                   & Resets to seed       & N/A (table removed)  \\
+        Rollback              & Inside a transaction & Inside a transaction & Inside a transaction \\
+        Fires DML triggers    & Yes                  & No                   & No                   \\
+        Referenced by an FK   & Allowed              & Not allowed          & Not allowed          \\
+        \bottomrule
+    \end{tabular}
+    \caption{Comparison of DELETE, TRUNCATE, and DROP}
+\end{table}
+A common exam claim is that \texttt{TRUNCATE} cannot be rolled back. In SQL Server this is false: all three statements can be rolled back if they run inside an explicit transaction, and none of them can be undone once committed (in autocommit mode, each statement commits immediately).
+
+\chapter{Rules, Defaults \& Custom Datatypes}
+
+\begin{warningbox}[Deprecated Features]
+    Rules and bound defaults are deprecated and will be removed in a future version of SQL Server. They are covered because they appear in the curriculum; in new designs use \texttt{CHECK} and \texttt{DEFAULT} constraints instead.
+\end{warningbox}
+
+\section{Rules}
+A \textbf{Rule} is a schema-level object that works like a reusable check constraint. It is defined once and bound to one or more columns or user-defined datatypes. A rule is only checked on new \texttt{INSERT}/\texttt{UPDATE} operations; existing data is not validated when it is bound.
+\begin{lstlisting}[language=SQL]
+-- Create the rule
+CREATE RULE AgeRule AS @Age >= 18;
+GO
+
+-- Bind the rule to a column
+EXEC sp_bindrule 'AgeRule', 'Employee.Age';
+\end{lstlisting}
+
+\section{Defaults}
+A \textbf{Default} is a schema-level object that defines a fallback value. It is defined once and bound using system stored procedures.
+\begin{lstlisting}[language=SQL]
+-- Create the default
+CREATE DEFAULT DefaultCity AS 'Cairo';
+GO
+
+-- Bind the default to a character column (its type must be compatible)
+ALTER TABLE Employee ADD City VARCHAR(50);
+GO
+EXEC sp_bindefault 'DefaultCity', 'Employee.City';
+\end{lstlisting}
+
+\section{User-Defined Datatypes}
+You can create custom datatypes and bind rules/defaults to them:
+\begin{lstlisting}[language=SQL]
+-- Creating custom datatype (Egyptian national IDs are exactly 14 digits)
+CREATE TYPE EgyptianID FROM CHAR(14) NOT NULL;
+GO
+
+-- Binding a rule to the datatype: every column of this type inherits it
+CREATE RULE EgyptianIDRule AS @id NOT LIKE '%[^0-9]%' AND LEN(@id) = 14;
+GO
+EXEC sp_bindrule 'EgyptianIDRule', 'EgyptianID';
+\end{lstlisting}
+
+\section{Persisted Computed Columns}
+A computed column is a virtual column calculated from other columns. By default it is calculated each time it is read. Adding \texttt{PERSISTED} stores the calculated values on disk and updates them automatically whenever the source columns change; the expression must then be deterministic (e.g., \texttt{GETDATE()} is not allowed):
+\begin{lstlisting}[language=SQL]
+CREATE TABLE SalaryCalculation (
+    ID INT PRIMARY KEY,
+    BaseSalary INT,
+    Overtime INT,
+    NetSalary AS (ISNULL(BaseSalary, 0) + ISNULL(Overtime, 0)) PERSISTED
+);
+\end{lstlisting}
+
+\part{Database Schemas \& Objects}
+
+\chapter{Schemas \& Synonyms}
+
+\section{Database Schemas}
+A \textbf{Schema} is a logical container used to group database objects (tables, views, stored procedures) for organization and security management. The default schema in SQL Server is \texttt{dbo} (Database Owner).
+\begin{lstlisting}[language=SQL]
+-- Create a new schema
+CREATE SCHEMA HR;
+GO
+
+-- Create a table inside the new schema
+CREATE TABLE HR.Department (
+    ID INT PRIMARY KEY,
+    Name VARCHAR(50)
+);
+\end{lstlisting}
+
+\section{Synonyms}
+A \textbf{Synonym} is an alias for a database object, which helps abstract the underlying schema or physical server location:
+\begin{lstlisting}[language=SQL]
+-- Create a synonym for a table in the HR schema
+CREATE SYNONYM HRDept FOR HR.Department;
+
+-- Query using the synonym
+SELECT * FROM HRDept;
+
+-- Moving an existing object into another schema
+ALTER SCHEMA HR TRANSFER dbo.EmptyEmployeeCopy;  -- the empty copy made with SELECT INTO
+\end{lstlisting}
+
+\part{Programming in T-SQL}
+
+\chapter{Variables, Control of Flow \& Transactions}
+
+\section{Variables}
+T-SQL supports declaring local variables using the \texttt{DECLARE} statement:
+\begin{lstlisting}[language=SQL]
+-- Declaring and assigning variables
+DECLARE @AgeVar INT;
+SET @AgeVar = 30;
+
+-- Assigning values from a query
+DECLARE @EmployeeName VARCHAR(50);
+SELECT @EmployeeName = Name FROM Employee WHERE EmployeeID = 1;
+\end{lstlisting}
+
+\section{Table Variables}
+A table variable stores a temporary result set that exists only for the current batch. Like temporary tables, it is physically stored in TempDB (a common misconception is that it lives only in memory). Unlike a temporary table, its contents are \emph{not} undone by \texttt{ROLLBACK}:
+\begin{lstlisting}[language=SQL]
+DECLARE @TempEmployeeTable TABLE (
+    EmpID INT,
+    EmpName VARCHAR(50)
+);
+
+INSERT INTO @TempEmployeeTable
+SELECT EmployeeID, Name FROM Employee;
+
+SELECT * FROM @TempEmployeeTable;
+\end{lstlisting}
+
+\section{Dynamic SQL}
+Dynamic SQL builds a statement as a string and then executes it:
+\begin{lstlisting}[language=SQL]
+DECLARE @Query NVARCHAR(MAX);
+DECLARE @TableName NVARCHAR(50) = N'Employee';
+
+SET @Query = N'SELECT * FROM ' + QUOTENAME(@TableName);   -- QUOTENAME guards object names
+EXEC sp_executesql @Query;
+
+-- Values should be passed as parameters, never concatenated (prevents SQL injection)
+EXEC sp_executesql
+     N'SELECT * FROM Employee WHERE Age > @MinAge',
+     N'@MinAge INT',
+     @MinAge = 30;
+\end{lstlisting}
+
+\section{Control of Flow}
+T-SQL supports standard control-of-flow statements:
+\begin{lstlisting}[language=SQL]
+-- IF-ELSE and EXISTS check
+IF EXISTS (SELECT * FROM Employee WHERE Age > 40)
+BEGIN
+    PRINT 'Senior employees found.';
+END
+ELSE
+BEGIN
+    PRINT 'No senior employees found.';
+END;
+
+-- WHILE loop
+DECLARE @Counter INT = 1;
+WHILE @Counter <= 5
+BEGIN
+    PRINT @Counter;
+    SET @Counter += 1;
+END;
+\end{lstlisting}
+
+\newpage
+\section{Error Handling (TRY-CATCH)}
+\begin{lstlisting}[language=SQL]
+BEGIN TRY
+    -- Division by zero error
+    SELECT 1 / 0;
+END TRY
+BEGIN CATCH
+    SELECT 
+        ERROR_NUMBER() AS ErrorNum,
+        ERROR_MESSAGE() AS ErrorMsg;
+END CATCH;
+\end{lstlisting}
+\texttt{TRY...CATCH} does not catch compile errors (such as a syntax error or a missing table name) in the same batch; these stop the batch before it runs. Use \texttt{THROW} inside \texttt{CATCH} to re-raise the original error to the caller.
+
+\section{Transactions (ACID Properties)}
+A transaction guarantees the ACID properties:
+\begin{itemize}
+    \item \textbf{Atomicity:} All operations succeed, or all are rolled back.
+    \item \textbf{Consistency:} A transaction takes the database from one valid state to another; every constraint holds before and after it.
+    \item \textbf{Isolation:} Uncommitted changes are hidden from other concurrent transactions (to the degree set by the isolation level).
+    \item \textbf{Durability:} Once committed, changes survive a crash, because they are first written to the transaction log.
+\end{itemize}
+
+\begin{lstlisting}[language=SQL]
+BEGIN TRANSACTION;
+BEGIN TRY
+    UPDATE Employee SET Age = 31 WHERE EmployeeID = 1;
+    -- Commit transaction if no error occurs
+    COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+    -- Roll back only if a transaction is still open
+    IF @@TRANCOUNT > 0
+        ROLLBACK TRANSACTION;
+    PRINT 'Transaction rolled back: ' + ERROR_MESSAGE();
+END CATCH;
+\end{lstlisting}
+
+\chapter{User-Defined Functions (UDF)}
+
+\section{Scalar Functions}
+Returns a single scalar value. When used in a query, it runs once per row, which can be slow on large tables (SQL Server 2019+ can inline simple scalar functions automatically).
+\begin{lstlisting}[language=SQL]
+CREATE FUNCTION dbo.GetSalaryWithTax (@Salary DECIMAL(10,2))
+RETURNS DECIMAL(10,2)
+AS
+BEGIN
+    RETURN @Salary * 1.14;
+END;
+GO
+
+-- Using scalar function
+SELECT dbo.GetSalaryWithTax(10000);
+\end{lstlisting}
+
+\section{Inline Table-Valued Functions}
+Returns a table from a single \texttt{SELECT} statement. The optimizer expands it into the calling query like a parameterized view, so it usually performs well.
+\begin{lstlisting}[language=SQL]
+CREATE FUNCTION dbo.GetEmployeesByDept (@DeptID INT)
+RETURNS TABLE
+AS
+RETURN (
+    SELECT EmployeeID, Name, Age 
+    FROM Employee 
+    WHERE DepartmentID = @DeptID
+);
+GO
+
+-- A table-valued function is used in FROM, like a table
+SELECT * FROM dbo.GetEmployeesByDept(2);
+\end{lstlisting}
+
+\section{Multi-Statement Table-Valued Functions}
+Returns a table, allowing multiple procedural statements to populate it. It is slower than inline table-valued functions.
+\begin{lstlisting}[language=SQL]
+CREATE FUNCTION dbo.GetEmployeesWithBonus()
+RETURNS @ResultTable TABLE (
+    EmpID INT,
+    Name VARCHAR(50),
+    Bonus DECIMAL(10,2)
+)
+AS
+BEGIN
+    INSERT INTO @ResultTable
+    SELECT EmployeeID, Name, Age * 100.0 FROM Employee;
+    RETURN;
+END;
+GO
+
+SELECT * FROM dbo.GetEmployeesWithBonus();
+\end{lstlisting}
+
+\chapter{Views}
+
+\section{Introduction}
+A \textbf{View} is a virtual table defined by a query. It stores no data itself; its query runs against the base tables every time the view is used.
+
+\section{Indexed (Materialized) Views}
+By creating a unique clustered index on a view, the view's result set is materialized and stored on disk, which speeds up expensive joins and aggregations. The view must be created \texttt{WITH SCHEMABINDING}, must reference tables by two-part names (e.g., \texttt{dbo.Employee}), and cannot use outer joins, \texttt{TOP}, or \texttt{DISTINCT}.
+
+\section{View Encryption \& Check Option}
+\begin{description}
+    \item[\texttt{WITH ENCRYPTION}:] Obfuscates the view's definition text in the system catalog to prevent users from reading it.
+    \item[\texttt{WITH CHECK OPTION}:] Prevents DML modifications through the view that would violate the view's filter condition.
+\end{description}
+
+\begin{lstlisting}[language=SQL]
+CREATE VIEW ITDepartmentEmployees
+WITH ENCRYPTION                 -- definition hidden from sp_helptext
+AS
+SELECT EmployeeID, Name, DepartmentID 
+FROM Employee
+WHERE DepartmentID = 2
+WITH CHECK OPTION;              -- rows must stay visible through the view
+GO
+
+UPDATE ITDepartmentEmployees SET Name = 'Sara M.' WHERE EmployeeID = 2;  -- succeeds
+UPDATE ITDepartmentEmployees SET DepartmentID = 3 WHERE EmployeeID = 2;  -- fails: row would leave the view
+\end{lstlisting}
+
+\chapter{Stored Procedures}
+
+\section{Introduction}
+A \textbf{Stored Procedure} is a named, stored collection of T-SQL statements. Its execution plan is compiled on first execution and cached for reuse. It encapsulates business logic, reduces network traffic and parsing overhead, and enhances security by granting permissions on the procedure instead of the underlying tables.
+
+\section{Parameters \& Return Values}
+Stored procedures support input parameters, output parameters, and an integer return status. By convention, 0 means success; use \texttt{OUTPUT} parameters or result sets, not the return status, to return data:
+\begin{lstlisting}[language=SQL]
+CREATE PROCEDURE GetEmployeeAge
+    @EmpID INT,
+    @Age   INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;   -- suppress "(n rows affected)" messages
+    IF NOT EXISTS (SELECT * FROM Employee WHERE EmployeeID = @EmpID)
+        RETURN 1;     -- status code: employee not found
+
+    SELECT @Age = Age FROM Employee WHERE EmployeeID = @EmpID;
+    RETURN 0;         -- status code: success
+END;
+GO
+
+-- Calling the procedure
+DECLARE @EmpAge INT, @Status INT;
+EXEC @Status = GetEmployeeAge @EmpID = 1, @Age = @EmpAge OUTPUT;
+PRINT CONCAT('Status: ', @Status, ', Age: ', @EmpAge);
+\end{lstlisting}
+
+\chapter{Triggers}
+\enlargethispage{2\baselineskip}
+\section{Introduction}
+A \textbf{Trigger} is a special stored procedure that runs automatically in response to an event. \textbf{DML triggers} fire on \texttt{INSERT}, \texttt{UPDATE}, or \texttt{DELETE} on a table or view; SQL Server also has \textbf{DDL triggers} (e.g., on \texttt{CREATE TABLE}) and \textbf{logon triggers}.
+
+\section{Virtual Tables: \texttt{inserted} and \texttt{deleted}}
+Triggers access two virtual (pseudo) tables that have the same structure as the target table:
+\begin{itemize}
+    \item \texttt{inserted}: Stores copies of the newly added or updated rows.
+    \item \texttt{deleted}: Stores copies of deleted or old pre-update rows.
+\end{itemize}
+
+\section{\texttt{AFTER} vs. \texttt{INSTEAD OF} Triggers}
+\begin{description}
+    \item[\texttt{AFTER} Trigger (Default):] Runs after the triggering statement succeeds, inside the same transaction, so it can still roll the change back. \texttt{FOR} is a synonym for \texttt{AFTER}. Allowed on tables only.
+    \item[\texttt{INSTEAD OF} Trigger:] Runs in place of the triggering statement, allowing custom validation or writes to the underlying tables. Allowed on tables and views (commonly used to make a multi-table view updatable).
+\end{description}
+\begin{warningbox}
+    A trigger fires \textbf{once per statement}, not once per row. An \texttt{UPDATE} that changes 100 rows fires the trigger once, with 100 rows in \texttt{inserted} and \texttt{deleted}. Always write trigger code as a set-based query over these tables (as below), never as \texttt{SELECT @var = ... FROM inserted}.
+\end{warningbox}
+\begin{description}[style=nextline]
+    \item[Note:] Bulk operations such as \texttt{BULK INSERT} do not fire triggers unless the \texttt{FIRE\_TRIGGERS} option is specified.
+\end{description}
+
+\begin{lstlisting}[language=SQL]
+-- Audit Trigger Example
+CREATE TABLE EmployeeAuditLog (
+    LogID INT IDENTITY PRIMARY KEY,
+    Action VARCHAR(10),
+    EmpID INT,
+    OldName VARCHAR(50),
+    NewName VARCHAR(50),
+    ChangeTime DATETIME DEFAULT GETDATE()
+);
+GO
+
+CREATE TRIGGER trg_EmployeeUpdate
+ON Employee
+AFTER UPDATE
+AS
+BEGIN
+    INSERT INTO EmployeeAuditLog (Action, EmpID, OldName, NewName)
+    SELECT 'UPDATE', i.EmployeeID, d.Name, i.Name
+    FROM inserted i INNER JOIN deleted d ON i.EmployeeID = d.EmployeeID;
+END;
+GO
+\end{lstlisting}
+
+\chapter{The MERGE Statement}
+The \texttt{MERGE} statement combines \texttt{INSERT}, \texttt{UPDATE}, and \texttt{DELETE} operations into a single statement, matching records between a target and a source table:
+\begin{lstlisting}[language=SQL]
+-- Merging source updates into target
+MERGE TargetTable AS T
+USING SourceTable AS S
+ON T.ID = S.ID
+WHEN MATCHED THEN
+    UPDATE SET T.Name = S.Name
+WHEN NOT MATCHED BY TARGET THEN              -- in source only
+    INSERT (ID, Name) VALUES (S.ID, S.Name)
+WHEN NOT MATCHED BY SOURCE THEN              -- in target only
+    DELETE;                                   -- MERGE must end with a semicolon
+\end{lstlisting}
+
+\part{Indexes \& Performance Optimization}
+
+\chapter{Database Indexes}
+
+\section{Table Scan vs. Index Seek}
+\begin{description}
+    \item[Table Scan:] The database engine scans every page of a table to locate rows (occurs on tables without a clustered index, known as heap tables). Slower.
+    \item[Index Scan:] The database engine scans the entire index structure.
+    \item[Index Seek:] The engine uses the index's B+ Tree search path to jump directly to target rows. Fast.
+\end{description}
+
+\section{Clustered vs. Non-Clustered Indexes}
+\begin{description}
+    \item[Clustered Index:] Determines the logical storage order of rows in the table (the leaf level of the index \emph{is} the data). Because rows can only be sorted in one order, there can be only one clustered index per table. By default, creating a primary key creates a clustered index on its columns, unless a clustered index already exists or \texttt{NONCLUSTERED} is specified.
+    \item[Non-Clustered Index:] A separate B+ tree whose leaf level stores the key values plus a row locator: the clustered index key if the table has one, otherwise a physical row ID (RID) on the heap. A table can have up to 999 non-clustered indexes. Creating a unique constraint automatically creates a non-clustered index.
+\end{description}
+\begin{lstlisting}[language=SQL]
+-- Clustered index (only one per table)
+CREATE CLUSTERED INDEX IX_Emp_ID ON EmployeeArchive(EmployeeID);
+
+-- Non-clustered index with included columns (covers the query below)
+CREATE NONCLUSTERED INDEX IX_Emp_Dept
+ON Employee(DepartmentID) INCLUDE (Name, Age);
+
+-- Can be answered with an index seek (on a 7-row table the optimizer
+-- may still prefer a scan, because it is cheaper at that size)
+SELECT Name, Age FROM Employee WHERE DepartmentID = 2;
+
+DROP INDEX IX_Emp_Dept ON Employee;
+\end{lstlisting}
+
+\chapter{Cursors}
+
+\section{Cursor Lifecycle}
+Cursors process rows in a result set sequentially (row-by-row), as an alternative to set-based operations. They should be used sparingly due to high memory and disk I/O overhead.
+The cursor lifecycle consists of:
+\begin{enumerate}
+    \item \textbf{DECLARE:} Defines the query.
+    \item \textbf{OPEN:} Executes the query and populates the cursor.
+    \item \textbf{FETCH:} Retrieves rows one by one, checking the fetch status using \texttt{@@FETCH\_STATUS}.
+    \item \textbf{CLOSE:} Releases the current result set.
+    \item \textbf{DEALLOCATE:} Removes the cursor definition from memory.
+\end{enumerate}
+
+\begin{lstlisting}[language=SQL]
+-- Fetching names row-by-row
+DECLARE @EmpName VARCHAR(50);
+DECLARE EmpCursor CURSOR FOR 
+SELECT Name FROM Employee WHERE Age > 20;
+
+OPEN EmpCursor;
+FETCH NEXT FROM EmpCursor INTO @EmpName;
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+    PRINT @EmpName;
+    FETCH NEXT FROM EmpCursor INTO @EmpName;
+END;
+
+CLOSE EmpCursor;
+DEALLOCATE EmpCursor;
+\end{lstlisting}
+
+\part{Backup, Recovery \& Integration}
+
+\chapter{Backup \& Recovery Models}
+
+\section{Recovery Models}
+The recovery model controls how the transaction log is maintained, and therefore which backups and restores are possible:
+\begin{description}
+    \item[Simple:] The log is truncated automatically at checkpoints. No log backups; you can only restore to the last full/differential backup.
+    \item[Full:] Every transaction is fully logged and kept until a log backup. Supports point-in-time recovery.
+    \item[Bulk-Logged:] Like Full, but bulk operations are minimally logged to save space. Point-in-time recovery is not possible within a log backup that contains bulk operations.
+\end{description}
+\begin{lstlisting}[language=SQL]
+ALTER DATABASE ITITestDB SET RECOVERY FULL;
+\end{lstlisting}
+
+\section{Backup Categories}
+SQL Server supports three main backup types:
+\begin{description}
+    \item[Full Backup:] Backs up the entire database.
+    \item[Differential Backup:] Backs up only the data changed since the last full backup. Differentials are cumulative, so a restore needs only the full backup plus the latest differential.
+    \item[Transaction Log Backup:] Backs up the log records written since the previous log backup, then allows that part of the log to be reused. Restoring the chain of log backups enables point-in-time recovery.
+\end{description}
+\begin{lstlisting}[language=SQL]
+BACKUP DATABASE ITITestDB TO DISK = 'C:\Backups\ITITestDB_Full.bak';
+BACKUP DATABASE ITITestDB TO DISK = 'C:\Backups\ITITestDB_Diff.bak' WITH DIFFERENTIAL;
+BACKUP LOG      ITITestDB TO DISK = 'C:\Backups\ITITestDB_Log.trn';  -- Full/Bulk-Logged only
+\end{lstlisting}
+
+\section{Database Snapshots}
+A database snapshot is a read-only, point-in-time view of a database. It uses copy-on-write: a page is copied into the snapshot file only when it is first changed in the source. A snapshot is \emph{not} a backup, because it depends on the source database files. (Available in all editions since SQL Server 2016 SP1.) \texttt{NAME} is the logical name of the source data file:
+\begin{lstlisting}[language=SQL]
+CREATE DATABASE ITIDB_Snapshot ON
+( NAME = ITITestDB, FILENAME = 'C:\Backups\ITIDB_Snapshot.ss' )
+AS SNAPSHOT OF ITITestDB;
+\end{lstlisting}
+
+\section{Identity Gap Resolution \& Bulk Insert}
+\begin{itemize}
+    \item \textbf{Identity Gap:} If SQL Server crashes or restarts, cached identity values can be lost, causing gaps (rolled-back inserts also consume values). Skipped values can be filled manually with \texttt{IDENTITY\_INSERT}, and since SQL Server 2017 the cache can be disabled with \texttt{ALTER DATABASE SCOPED CONFIGURATION SET IDENTITY\_CACHE = OFF}.
+    \item \textbf{Bulk Insert:} Imports large text/CSV files much faster than row-by-row \texttt{INSERT} statements.
+\end{itemize}
+\begin{lstlisting}[language=SQL]
+SET IDENTITY_INSERT EmployeeAuditLog ON;
+INSERT INTO EmployeeAuditLog (LogID, Action, EmpID) VALUES (5, 'MANUAL', 1);
+SET IDENTITY_INSERT EmployeeAuditLog OFF;
+\end{lstlisting}
+\begin{lstlisting}[language=SQL]
+-- The file path is read by the SQL Server service, on the server machine
+BULK INSERT Employee
+FROM 'C:\data\employees.csv'
+WITH (
+    FIRSTROW = 2,            -- skip the header row
+    FIELDTERMINATOR = ',',
+    ROWTERMINATOR = '\n'
+);
+\end{lstlisting}
+
+\chapter{XML Integration}
+SQL Server supports exporting query results as XML and parsing XML documents:
+\begin{lstlisting}[language=SQL]
+-- Exporting as XML
+SELECT EmployeeID, Name FROM Employee FOR XML PATH('Employee');
+
+-- Parsing XML using OPENXML
+DECLARE @hDoc INT;
+DECLARE @XML XML = '<Employees><Emp ID="10"><Name>Ali</Name></Emp></Employees>';
+
+EXEC sp_xml_preparedocument @hDoc OUTPUT, @XML;
+
+SELECT * FROM OPENXML(@hDoc, '/Employees/Emp')
+WITH (ID INT '@ID', Name VARCHAR(50) 'Name');
+
+EXEC sp_xml_removedocument @hDoc;   -- always release the document handle
+
+-- Modern alternative: XML type methods (no handle to manage)
+SELECT E.x.value('@ID', 'INT')            AS ID,
+       E.x.value('(Name)[1]', 'VARCHAR(50)') AS Name
+FROM @XML.nodes('/Employees/Emp') AS E(x);
+\end{lstlisting}
+
+\chapter{SQL Common Language Runtime (SQL CLR)}
+SQL CLR allows writing stored procedures and user-defined functions in C\# or VB.NET and running them inside SQL Server:
+\begin{lstlisting}[language=SQL]
+-- 1. Enable SQL CLR
+EXEC sp_configure 'clr enabled', 1;
+RECONFIGURE;
+GO
+
+-- 2. Register C# Assembly
+-- CREATE ASSEMBLY MyAssembly FROM 'C:\Assemblies\MyCode.dll' WITH PERMISSION_SET = SAFE;
+\end{lstlisting}
+Since SQL Server 2017, \texttt{clr strict security} is on by default: every assembly, even \texttt{SAFE}, must be signed with a trusted certificate or added with \texttt{sys.sp\_add\_trusted\_assembly}.
+
+\appendix
+
+\chapter{SQL Execution Order Quick Reference}\label{ch:exec_order}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{lll}
+        \toprule
+        \textbf{Step} & \textbf{Clause}                & \textbf{Purpose}                              \\
+        \midrule
+        1             & \texttt{FROM} \& \texttt{JOIN} & Select source tables and merge datasets       \\
+        2             & \texttt{WHERE}                 & Apply row-level filters                       \\
+        3             & \texttt{GROUP BY}              & Aggregate records into groups                 \\
+        4             & \texttt{HAVING}                & Filter aggregated groups                      \\
+        5             & \texttt{SELECT}                & Project final columns and execute expressions \\
+        6             & \texttt{DISTINCT}              & Remove duplicate records                      \\
+        7             & \texttt{ORDER BY}              & Sort the final result set                     \\
+        8             & \texttt{TOP / OFFSET}          & Restrict the number of returned records       \\
+        \bottomrule
+    \end{tabular}
+    \caption{Logical SQL execution order}
+\end{table}
+
+\end{document}
