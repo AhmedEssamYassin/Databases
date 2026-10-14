@@ -60,7 +60,7 @@ namespace DBapplication
         {
             AttemptLogin();
         }
-      
+
         private void Exit_MouseClick(object sender, MouseEventArgs e)
         {
             this.Close();

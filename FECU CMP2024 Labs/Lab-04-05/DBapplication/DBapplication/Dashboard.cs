@@ -119,7 +119,7 @@ namespace DBapplication
             MaterialThemeManager.StyleDataGridView(EmployeeTable);
             MaterialThemeManager.AutoFitGridColumns(EmployeeTable);
         }
-        
+
         private void FormatGridColumns()
         {
             if (EmployeeTable.Columns.Contains("Fname")) EmployeeTable.Columns["Fname"].HeaderText = "First Name";
@@ -130,7 +130,7 @@ namespace DBapplication
             if (EmployeeTable.Columns.Contains("Dno")) EmployeeTable.Columns["Dno"].HeaderText = "Dept No";
             if (EmployeeTable.Columns.Contains("Super_SSN")) EmployeeTable.Columns["Super_SSN"].HeaderText = "Supervisor SSN";
             if (EmployeeTable.Columns.Contains("Salary")) EmployeeTable.Columns["Salary"].HeaderText = "Salary ($)";
-            
+
             EmployeeTable.Refresh();
         }
 
@@ -156,7 +156,7 @@ namespace DBapplication
             insertForm.ShowDialog();
             RefreshGrid();
         }
-        
+
         private void btnSuppliers_Click(object sender, EventArgs e)
         {
             Supplier supplierForm = new Supplier();

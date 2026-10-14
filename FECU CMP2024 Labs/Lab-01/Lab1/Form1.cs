@@ -68,7 +68,7 @@ namespace WindowsFormsApp1
             btn.Cursor = Cursors.Hand;
             IntPtr hrgn = CreateRoundRectRgn(0, 0, btn.Width, btn.Height, 10, 10);
             btn.Region?.Dispose();
-            btn.Region = Region.FromHrgn(hrgn); 
+            btn.Region = Region.FromHrgn(hrgn);
             DeleteObject(hrgn);
         }
 
@@ -116,7 +116,7 @@ namespace WindowsFormsApp1
 
             if (errors.Count > 0)
             {
-                MessageBox.Show("Please correct the following errors:\n" + string.Join("\n", errors), 
+                MessageBox.Show("Please correct the following errors:\n" + string.Join("\n", errors),
                                 "Input Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }

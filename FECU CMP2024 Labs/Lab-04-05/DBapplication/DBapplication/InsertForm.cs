@@ -80,7 +80,7 @@ namespace DBapplication
             }
 
             int result = controllerObj.InsertEmployee(FnameTextBox.Text, minit, LnameTextBox.Text, ssn, AddressTextBox.Text, bDate, gender, deptNo, salary, superSsn);
-            
+
             if (result == 0)
             {
                 MessageBox.Show("The insertion of a new Employee failed.");

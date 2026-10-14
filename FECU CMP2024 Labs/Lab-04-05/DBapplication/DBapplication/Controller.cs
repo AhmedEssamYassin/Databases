@@ -75,11 +75,11 @@ namespace DBapplication
 
             string query = "UPDATE Employee SET " + string.Join(", ", setClauses) + " WHERE SSN = @SSNCondition;";
             parameters["@SSNCondition"] = SSN;
-            
+
             return dbMan.ExecuteNonQuery(query, parameters);
         }
 
-        public int DeleteEmployee(long SSN) 
+        public int DeleteEmployee(long SSN)
         {
             string query = "usp_DeleteEmployee";
             var parameters = new Dictionary<string, object> { { "@SSN", SSN } };

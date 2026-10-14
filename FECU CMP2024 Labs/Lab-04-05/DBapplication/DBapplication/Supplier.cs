@@ -31,9 +31,9 @@ namespace DBapplication
 
         private void insertButton_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(sNumTextBox.Text) || 
-                string.IsNullOrWhiteSpace(sNameTextBox.Text) || 
-                string.IsNullOrWhiteSpace(cityTextBox.Text) || 
+            if (string.IsNullOrWhiteSpace(sNumTextBox.Text) ||
+                string.IsNullOrWhiteSpace(sNameTextBox.Text) ||
+                string.IsNullOrWhiteSpace(cityTextBox.Text) ||
                 string.IsNullOrWhiteSpace(statusTextBox.Text))
             {
                 MessageBox.Show("Please fill all fields.");

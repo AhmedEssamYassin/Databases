@@ -9,7 +9,7 @@ namespace DBapplication
     public partial class UpdateForm : MaterialForm
     {
         private Controller controllerObj;
-        private long _currentSSN; 
+        private long _currentSSN;
         private bool _bdateEditable = true;
         private bool _bdateChanged = false;
 
@@ -78,7 +78,7 @@ namespace DBapplication
                 MinitTextBox.Text = row["Minit"].ToString();
                 LnameTextBox.Text = row["Lname"].ToString();
                 SSNTextBox.Text = row["SSN"].ToString();
-                
+
                 if (DateTime.TryParse(row["BDate"].ToString(), out DateTime dt))
                     dtpBDate.Value = dt;
                 else
@@ -89,7 +89,7 @@ namespace DBapplication
                 }
 
                 AddressTextBox.Text = row["Address"].ToString();
-                
+
                 string sex = row["Sex"].ToString();
                 if (sex == "M" || sex == "F") cmbGender.SelectedItem = sex;
 
