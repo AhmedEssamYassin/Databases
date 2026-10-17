@@ -27,7 +27,7 @@
         </Field>
         <Field Name="SalaryAverage">
           <DataField>SalaryAverage</DataField>
-          <rd:TypeName>System.Int32</rd:TypeName>
+          <rd:TypeName>System.Double</rd:TypeName>
         </Field>
         <Field Name="SalaryMaximum">
           <DataField>SalaryMaximum</DataField>

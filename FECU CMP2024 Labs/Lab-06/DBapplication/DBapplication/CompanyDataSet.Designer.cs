@@ -1192,7 +1192,7 @@ namespace DBapplication {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "18.0.0.0")]
-            public DepartmentStatisticsRow AddDepartmentStatisticsRow(string Dname, int SalaryMinimum, int SalaryAverage, int SalaryMaximum, int EmployeeCount) {
+            public DepartmentStatisticsRow AddDepartmentStatisticsRow(string Dname, int SalaryMinimum, double SalaryAverage, int SalaryMaximum, int EmployeeCount) {
                 DepartmentStatisticsRow rowDepartmentStatisticsRow = ((DepartmentStatisticsRow)(this.NewRow()));
                 object[] columnValuesArray = new object[] {
                         Dname,
@@ -1236,7 +1236,7 @@ namespace DBapplication {
                 base.Columns.Add(this.columnDname);
                 this.columnSalaryMinimum = new global::System.Data.DataColumn("SalaryMinimum", typeof(int), null, global::System.Data.MappingType.Element);
                 base.Columns.Add(this.columnSalaryMinimum);
-                this.columnSalaryAverage = new global::System.Data.DataColumn("SalaryAverage", typeof(int), null, global::System.Data.MappingType.Element);
+                this.columnSalaryAverage = new global::System.Data.DataColumn("SalaryAverage", typeof(double), null, global::System.Data.MappingType.Element);
                 base.Columns.Add(this.columnSalaryAverage);
                 this.columnSalaryMaximum = new global::System.Data.DataColumn("SalaryMaximum", typeof(int), null, global::System.Data.MappingType.Element);
                 base.Columns.Add(this.columnSalaryMaximum);
@@ -1824,10 +1824,10 @@ namespace DBapplication {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "18.0.0.0")]
-            public int SalaryAverage {
+            public double SalaryAverage {
                 get {
                     try {
-                        return ((int)(this[this.tableDepartmentStatistics.SalaryAverageColumn]));
+                        return ((double)(this[this.tableDepartmentStatistics.SalaryAverageColumn]));
                     }
                     catch (global::System.InvalidCastException e) {
                         throw new global::System.Data.StrongTypingException("The value for column \'SalaryAverage\' in table \'DepartmentStatistics\' is DBNull.", e);
@@ -2646,7 +2646,7 @@ SELECT Fname, Minit, Lname, SSN, Bdate, Address, Sex, Salary, Super_SSN, Dno FRO
             this._commandCollection[0] = new global::System.Data.SqlClient.SqlCommand();
             this._commandCollection[0].Connection = this.Connection;
             this._commandCollection[0].CommandText = "SELECT Fname, Minit, Lname, SSN, Bdate, Address, Sex, Salary, Super_SSN, Dno \r\nFR" +
-                "OM Employee \r\nWHERE Dno = @DnoParameter\r\n";
+                "OM Employee \r\nWHERE (@DnoParameter IS NULL OR Dno = @DnoParameter)\r\n";
             this._commandCollection[0].CommandType = global::System.Data.CommandType.Text;
             this._commandCollection[0].Parameters.Add(new global::System.Data.SqlClient.SqlParameter("@DnoParameter", global::System.Data.SqlDbType.Int, 4, global::System.Data.ParameterDirection.Input, 0, 0, "Dno", global::System.Data.DataRowVersion.Current, false, null, "", "", ""));
         }
@@ -3213,10 +3213,10 @@ SELECT Fname, Minit, Lname, SSN, Bdate, Address, Sex, Salary, Super_SSN, Dno FRO
             this._commandCollection = new global::System.Data.SqlClient.SqlCommand[1];
             this._commandCollection[0] = new global::System.Data.SqlClient.SqlCommand();
             this._commandCollection[0].Connection = this.Connection;
-            this._commandCollection[0].CommandText = "SELECT Dname, \r\n       MIN(Salary) AS SalaryMinimum, \r\n       AVG(Salary) AS Sala" +
-                "ryAverage, \r\n       MAX(Salary) AS SalaryMaximum, \r\n       COUNT(SSN) AS Employe" +
-                "eCount \r\nFROM Department \r\nINNER JOIN Employee ON Dnumber = Dno \r\nGROUP BY Dname" +
-                "\r\n";
+            this._commandCollection[0].CommandText = "SELECT Dname, \r\n       MIN(Salary) AS SalaryMinimum, \r\n       AVG(CAST(Salary AS" +
+                " FLOAT)) AS SalaryAverage, \r\n       MAX(Salary) AS SalaryMaximum, \r\n       COUNT" +
+                "(SSN) AS EmployeeCount \r\nFROM Department \r\nLEFT JOIN Employee ON Dnumber = Dno \r" +
+                "\nGROUP BY Dname\r\n";
             this._commandCollection[0].CommandType = global::System.Data.CommandType.Text;
         }
         

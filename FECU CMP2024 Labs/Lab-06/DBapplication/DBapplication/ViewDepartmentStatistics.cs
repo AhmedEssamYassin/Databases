@@ -12,16 +12,27 @@ namespace DBapplication
 
         private void ViewDepartmentStatistics_Load(object sender, EventArgs e)
         {
-            this.departmentStatisticsTableAdapter.Fill(this.companyDataSet.DepartmentStatistics);
+            try
+            {
+                this.departmentStatisticsTableAdapter.Fill(this.companyDataSet.DepartmentStatistics);
 
-            this.deptStatsReportViewer.LocalReport.DataSources.Clear();
-            Microsoft.Reporting.WinForms.ReportDataSource rds = new Microsoft.Reporting.WinForms.ReportDataSource(
-                "DepartmentDataSet",
-                (System.Data.DataTable)this.companyDataSet.DepartmentStatistics
-            );
-            this.deptStatsReportViewer.LocalReport.DataSources.Add(rds);
+                this.deptStatsReportViewer.LocalReport.DataSources.Clear();
+                Microsoft.Reporting.WinForms.ReportDataSource rds = new Microsoft.Reporting.WinForms.ReportDataSource(
+                    "DepartmentDataSet",
+                    (System.Data.DataTable)this.companyDataSet.DepartmentStatistics
+                );
+                this.deptStatsReportViewer.LocalReport.DataSources.Add(rds);
 
-            this.deptStatsReportViewer.RefreshReport();
+                this.deptStatsReportViewer.RefreshReport();
+            }
+            catch (System.Data.SqlClient.SqlException ex)
+            {
+                MessageBox.Show("A database error occurred while loading department statistics: " + ex.Message, "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("An unexpected error occurred: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }
