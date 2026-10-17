@@ -136,7 +136,7 @@ SELECT FirstName + ' ' + LastName AS FullName FROM Student;
 SELECT 
     s.StudentID,
     s.FirstName + ' ' + s.LastName AS FullName, 
-    AVG(t.Grade) AS AverageGrade 
+    AVG(CAST(t.Grade AS FLOAT)) AS AverageGrade 
 FROM 
     Student s 
 LEFT JOIN 
