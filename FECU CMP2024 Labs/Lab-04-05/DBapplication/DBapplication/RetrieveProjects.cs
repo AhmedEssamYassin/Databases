@@ -33,6 +33,7 @@ namespace DBapplication
             if (dgvProjects.Columns.Contains("Pnumber")) dgvProjects.Columns["Pnumber"].HeaderText = "Project Number";
             if (dgvProjects.Columns.Contains("Plocation")) dgvProjects.Columns["Plocation"].HeaderText = "Location";
             if (dgvProjects.Columns.Contains("Dnum")) dgvProjects.Columns["Dnum"].HeaderText = "Department Number";
+            if (dgvProjects.Columns.Contains("Dname")) dgvProjects.Columns["Dname"].HeaderText = "Department Name";
         }
 
         private void btnExecute_Click(object sender, EventArgs e)

@@ -38,7 +38,11 @@ namespace DBapplication
 
         private void EnsureConnectionOpen()
         {
-            if (myConnection.State == ConnectionState.Closed || myConnection.State == ConnectionState.Broken)
+            if (myConnection.State == ConnectionState.Broken)
+            {
+                myConnection.Close();
+            }
+            if (myConnection.State == ConnectionState.Closed)
             {
                 myConnection.Open();
             }

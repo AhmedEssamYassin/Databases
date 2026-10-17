@@ -29,7 +29,7 @@ namespace DBapplication
             return (int)dbMan.ExecuteScalar(query, parameters);
         }
 
-        public int InsertEmployee(string EFname, string EMinit, string ELname, long ESSN, string EAddress, string EBDate, string EGender, int EDeptNo, decimal ESalary, long? ESuperSSN)
+        public int InsertEmployee(string EFname, string EMinit, string ELname, long ESSN, string EAddress, string EBDate, string EGender, int EDeptNo, int ESalary, long? ESuperSSN)
         {
             string query = "INSERT INTO Employee (Fname, Minit, Lname, SSN, Bdate, Address, Sex, Dno, Salary, Super_SSN) " +
                            "VALUES (@Fname, @Minit, @Lname, @SSN, @Bdate, @Address, @Sex, @Dno, @Salary, @Super_SSN);";
@@ -140,9 +140,15 @@ namespace DBapplication
 
         public int DeleteProject(int Pnumber)
         {
+            string query = @"
+                SET XACT_ABORT ON;
+                BEGIN TRANSACTION;
+                SET NOCOUNT ON;
+                DELETE FROM Works_On WHERE Pno = @Pno;
+                SET NOCOUNT OFF;
+                DELETE FROM Project WHERE Pnumber = @Pno;
+                COMMIT TRANSACTION;";
             var parameters = new Dictionary<string, object> { { "@Pno", Pnumber } };
-            dbMan.ExecuteNonQuery("DELETE FROM Works_On WHERE Pno = @Pno;", parameters);
-            string query = "DELETE FROM Project WHERE Pnumber = @Pno;";
             return dbMan.ExecuteNonQuery(query, parameters);
         }
 

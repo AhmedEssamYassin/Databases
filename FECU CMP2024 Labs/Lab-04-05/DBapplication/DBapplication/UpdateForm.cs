@@ -122,9 +122,9 @@ namespace DBapplication
                 return;
             }
 
-            if (!decimal.TryParse(SalaryTextBox.Text, out decimal salary))
+            if (!int.TryParse(SalaryTextBox.Text, out int salary) || salary < 0)
             {
-                MessageBox.Show("Salary must be a valid number.");
+                MessageBox.Show("Salary must be a valid non-negative integer.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 

@@ -119,7 +119,7 @@ GO
 -- Stored procedures
 
 -- Stored Procedure to search employees by name or exact SSN
-CREATE PROCEDURE usp_SearchEmployees
+CREATE PROCEDURE dbo.usp_SearchEmployees
     @SearchVal VARCHAR(50)
 AS
 BEGIN
@@ -131,7 +131,7 @@ END
 GO
 
 -- Stored Procedure to get the count of employees working on a project
-CREATE PROCEDURE usp_GetProjectEmployeeCount
+CREATE PROCEDURE dbo.usp_GetProjectEmployeeCount
     @Pnumber INT
 AS
 BEGIN
@@ -140,7 +140,7 @@ END
 GO
 
 -- Stored Procedure to delete a project and clear Works_On dependencies safely
-CREATE PROCEDURE usp_DeleteProject
+CREATE PROCEDURE dbo.usp_DeleteProject
     @Pnumber INT
 AS
 BEGIN

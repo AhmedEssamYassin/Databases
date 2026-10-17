@@ -27,6 +27,7 @@ namespace DBapplication
 
             MaterialThemeManager.Initialize(this);
             var isDark = MaterialSkin.MaterialSkinManager.Instance.Theme == MaterialSkin.MaterialSkinManager.Themes.DARK;
+            btnThemeToggle.Text = isDark ? "Light Mode" : "Dark Mode";
             MaterialThemeManager.StyleSidebarPanel(panelSidebar, isDark);
             MaterialThemeManager.StyleDataGridView(EmployeeTable);
             MaterialThemeManager.AutoFitGridColumns(EmployeeTable);
