@@ -108,11 +108,24 @@ namespace WindowsFormsApp1
             }
             else
             {
+                string selectedActor = ActorBox.Text.Trim();
+                bool exists = listOfMovies.Exists(m =>
+                    string.Equals(m.Title, receivedMovie.Title, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(m.Actor, selectedActor, StringComparison.OrdinalIgnoreCase));
+
+                if (exists)
+                {
+                    MessageLabel.Text = "This actor is already assigned to this movie";
+                    MessageLabel.ForeColor = Color.Red;
+                    MessageLabel.Visible = true;
+                    return;
+                }
+
                 Movie newMovie;
                 newMovie.Title = receivedMovie.Title;
                 newMovie.Genre = receivedMovie.Genre;
                 newMovie.Accessibility = receivedMovie.Accessibility;
-                newMovie.Actor = ActorBox.Text;
+                newMovie.Actor = selectedActor;
 
                 listOfMovies.Add(newMovie);
                 MovieListGrid.Rows.Add(newMovie.Title, newMovie.Actor, newMovie.Genre, newMovie.Accessibility);
